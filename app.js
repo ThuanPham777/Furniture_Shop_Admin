@@ -4,6 +4,8 @@ const connectDB = require('./config/db');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const expressLayouts = require('express-ejs-layouts');
+const productRoutes = require('./app/products/routes/productRoutes');
+const apiProductRoutes = require('./app/api/products/apiProductRoutes');
 
 const app = express();
 app.use(expressLayouts);
@@ -27,4 +29,6 @@ app.get('/', function (req, res) {
   res.render('dashboard/dashboard');
 });
 
+app.use('/products', productRoutes);
+app.use('/api/products', apiProductRoutes);
 module.exports = app;
