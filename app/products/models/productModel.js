@@ -11,8 +11,6 @@ const productSchema = new mongoose.Schema(
     category: String,
     manufacturer: String,
     material: String,
-    averageReview: { type: Number, min: 1, max: 5 },
-    quantityReview: Number,
     images: [String],
   },
   {

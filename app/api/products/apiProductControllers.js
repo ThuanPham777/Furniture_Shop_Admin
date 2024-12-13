@@ -38,9 +38,14 @@ exports.editProduct = async (req, res) => {
     const productId = req.params.productId;
     const updatedProduct = await productService.updateProduct(
       productId,
-      req.body
+      req.body,
+      req.files
     );
-    res.json(updatedProduct);
+    res.json({
+      success: true,
+      message: 'Product edited successfully!',
+      updatedProduct,
+    });
   } catch (error) {
     console.error('Error updating product:', error);
     res.status(500).json({ message: 'Error updating product' });

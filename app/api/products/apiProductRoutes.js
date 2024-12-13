@@ -13,6 +13,10 @@ router.post(
   apiProductControllers.addProduct
 );
 
-router.put('/update/:productId', apiProductControllers.editProduct);
+router.put(
+  '/edit/:productId',
+  upload.array('images', 10),
+  apiProductControllers.editProduct
+);
 
 module.exports = router;

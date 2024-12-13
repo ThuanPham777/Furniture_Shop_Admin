@@ -1,6 +1,5 @@
 const Product = require('../models/productModel');
 const cloudinary = require('../../../config/cloudinary');
-const fs = require('fs');
 
 //--------
 exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
@@ -98,25 +97,43 @@ exports.getProductById = async (id) => {
 // Function to handle product creation and image upload
 exports.createProduct = async (productData, files) => {
   try {
-    const uploadedImages = [];
-
-    // Upload each file to Cloudinary
-    for (let i = 0; i < files.length; i++) {
-      const filePath = files[i].path;
-
-      // Upload image to Cloudinary
-      const result = await cloudinary.uploader.upload(filePath, {
-        resource_type: 'auto', // Auto detect file type
-      });
-
-      // Add the image URL to the uploadedImages array
-      uploadedImages.push(result.url);
-
-      // Remove the file after upload
-      fs.unlinkSync(filePath);
+    if (!files || files.length === 0) {
+      throw new Error('No files uploaded');
     }
 
-    // Add the uploaded images to product data
+    const uploadedImages = [];
+    const folderName = `products/${productData.name}`;
+
+    // Use Promise.all to wait for all uploads to complete
+    const uploadPromises = files.map((file) => {
+      return new Promise((resolve, reject) => {
+        const fileBuffer = file.buffer;
+
+        cloudinary.uploader
+          .upload_stream(
+            {
+              resource_type: 'auto', // Auto detect file type
+              folder: folderName, // Upload to a specific folder in Cloudinary
+            },
+            (error, result) => {
+              if (error) {
+                console.error('Cloudinary upload error:', error);
+                reject(error); // Reject the promise if there's an error
+              } else {
+                uploadedImages.push(result.url); // Add image URL to array
+                resolve(); // Resolve the promise after upload completes
+              }
+            }
+          )
+          .end(fileBuffer); // End the upload stream
+      });
+    });
+
+    // Wait for all image uploads to finish
+    await Promise.all(uploadPromises);
+    console.log(uploadedImages);
+
+    // After all uploads are complete, assign the uploaded images to product data
     productData.images = uploadedImages;
 
     // Create a new product and save to the database
@@ -130,6 +147,63 @@ exports.createProduct = async (productData, files) => {
   }
 };
 
-exports.updateProduct = async (productId, updateData) => {
-  return Product.findByIdAndUpdate(productId, updateData, { new: true });
+exports.updateProduct = async (productId, updateData, files) => {
+  try {
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct) {
+      throw new Error('Product not found');
+    }
+
+    const uploadedImages = [];
+    const folderName = `products/${updateData.name}`;
+
+    if (files && files.length > 0) {
+      // Use Promise.all to handle asynchronous uploads
+      const uploadPromises = files.map((file) => {
+        return new Promise((resolve, reject) => {
+          const fileBuffer = file.buffer;
+
+          cloudinary.uploader
+            .upload_stream(
+              {
+                resource_type: 'auto', // Auto detect file type
+                folder: folderName, // Upload to a specific folder in Cloudinary
+              },
+              (error, result) => {
+                if (error) {
+                  console.error('Cloudinary upload error:', error);
+                  reject(error); // Reject the promise if there's an error
+                } else {
+                  uploadedImages.push(result.url); // Add image URL to array
+                  resolve(); // Resolve the promise after upload completes
+                }
+              }
+            )
+            .end(fileBuffer); // End the upload stream
+        });
+      });
+
+      // Wait for all image uploads to finish
+      await Promise.all(uploadPromises);
+
+      // Update image URLs depending on whether you want to replace or append
+      if (updateData.replaceImages) {
+        updateData.images = uploadedImages; // Replace existing images
+      } else {
+        updateData.images = [...existingProduct.images, ...uploadedImages]; // Append new images
+      }
+    }
+
+    // Update the product with the new data
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      updateData,
+      { new: true }
+    );
+
+    return updatedProduct;
+  } catch (error) {
+    console.error('Error updating product:', error);
+    throw new Error('Error updating product');
+  }
 };
