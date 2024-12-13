@@ -1,18 +1,24 @@
 <div class="shop-page py-6 px-2">
 
+
     <!-- Search Section -->
-    <div class="mb-6">
-        <form id="searchForm" method="GET">
-            <label for="search" class="block text-sm font-medium">Search Products</label>
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <a href="/products/add"
+                class="px-6 py-2 bg-lime-500 text-white rounded-md hover:bg-lime-600 text-center inline-block">
+                Add product
+            </a>
+        </div>
+        <div id="searchForm">
             <input type="text" id="search" name="search" placeholder="Search by name"
                 value="<%= filters?.search || '' %>" class="filter-input px-4 py-2 border rounded-md w-full mt-2"
                 onchange="updateSearchFilter(this)">
-        </form>
+        </div>
     </div>
 
     <!-- Sort Section -->
     <div class="text-right mb-6">
-        <form id="sortForm" method="GET">
+        <form id="sortForm">
             <label>
                 <select name="sort" onchange="updateQueryParams(this)"
                     class="filter-dropdown border focus:outline-none focus:ring-2 py-2">
@@ -36,7 +42,7 @@
         <!-- Filter Section -->
         <div class="w-full lg:w-1/4 p-4 mb-6 lg:mb-0">
             <h2 class="text-2xl font-semibold mb-4">Filter Products</h2>
-            <form id="filterForm" method="GET">
+            <form id="filterForm">
                 <!-- Price Filter -->
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-4">Price</h3>
@@ -114,9 +120,9 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="productList">
                 <% products.forEach(product=> { %>
                     <div
-                        class="bg-white shadow-md rounded-lg overflow-hidden transform hover:scale-105 transition duration-300 ease-in-out">
+                        class="bg-white shadow-md rounded-lg overflow-hidden transform transition duration-300 ease-in-out">
                         <div>
-                            <a href="/shop/<%= product._id %>">
+                            <a>
                                 <!-- Fixed Image Size -->
                                 <img src="<%= product.images[0] %>" alt="<%= product.name %>"
                                     class="w-full h-64 object-cover object-center" />
@@ -142,10 +148,14 @@
 
                             <!-- View Detail Button -->
                             <div class="mt-4">
-                                <a href="/shop/<%= product._id %>-<%= product.name.replace(/\s+/g, '-').toLowerCase() %>"
+                                <a href="/products/edit/<%= product._id %>"
                                     class="px-6 py-2 bg-lime-500 text-white rounded-md hover:bg-lime-600 text-center inline-block">
-                                    View Detail
+                                    Edit
                                 </a>
+                                <button data-id="${product._id}"
+                                    class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-center inline-block delete-btn">
+                                    Delete
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -228,11 +238,11 @@
     }
 
     // Cập nhật bộ lọc tìm kiếm
-        function updateSearchFilter(input) {
-            const filters = { ...Object.fromEntries(new FormData(document.getElementById('filterForm')).entries()), search: input.value };
-            updateURL(filters);
-            fetchProducts(filters);
-        }
+    function updateSearchFilter(input) {
+        const filters = { ...Object.fromEntries(new FormData(document.getElementById('filterForm')).entries()), search: input.value };
+        updateURL(filters);
+        fetchProducts(filters);
+    }
 
     // Fetch API to update products and pagination
     async function fetchProducts(filters = {}) {
@@ -256,7 +266,7 @@
                 (product) => `
         <div class="bg-white shadow-md rounded-lg overflow-hidden transform hover:scale-105 transition duration-300 ease-in-out">
             <div>
-                <a href="/shop/${product._id}">
+                <a>
                     <img src="${product.images[0]}" alt="${product.name}" class="w-full h-64 object-cover object-center" />
                 </a>
             </div>
@@ -271,12 +281,18 @@
                         : `<p class="text-lime-500 font-bold">$${product.price}</p>`
                     }
                 </div>
-                <div class="mt-4">
-                    <a href="/shop/${product._id}-${product.name.replace(/\s+/g, '-').toLowerCase()}"
+                 <div class="mt-4">
+                                <a
+                        href="/products/edit/${product._id}"
                         class="px-6 py-2 bg-lime-500 text-white rounded-md hover:bg-lime-600 text-center inline-block">
-                        View Detail
+                        Edit
                     </a>
-                </div>
+                    <button
+                        data-id="${product._id}"
+                        class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-center inline-block delete-btn">
+                        Delete
+                    </button>
+                            </div>
             </div>
         </div>`
             )

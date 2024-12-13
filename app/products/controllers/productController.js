@@ -1,5 +1,5 @@
 const productService = require('../services/productService'); // Service xử lý logic về sản phẩm
-const getAllProducts = async (req, res, next) => {
+exports.getAllProducts = async (req, res, next) => {
   try {
     // Lấy các filter và phân trang từ query
     const filters = req.query;
@@ -26,6 +26,29 @@ const getAllProducts = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  getAllProducts,
+exports.renderAddProductPage = async (req, res) => {
+  const { productId } = req.params;
+  const existingProduct = await productService.getProductById(productId);
+
+  res.render('product/add-product', {
+    product: existingProduct || null, // null nếu thêm mới
+    categories: [
+      'Lamps',
+      'Tables',
+      'Chairs',
+      'Dressers',
+      'Cots',
+      'Night Stands',
+      'Sofas',
+      'Shelves',
+    ], // danh sách categories
+    manufacturers: [
+      'IKEA',
+      'Vitra',
+      'Herman Miller',
+      'Knoll',
+      'Haworth',
+      'Maiden Home',
+    ], // danh sách manufacturers
+  });
 };

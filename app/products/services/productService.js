@@ -1,5 +1,9 @@
 const Product = require('../models/productModel');
-const getProducts = async (filters = {}, page = 1, limit = 6) => {
+const cloudinary = require('../../../config/cloudinary');
+const fs = require('fs');
+
+//--------
+exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
   try {
     const filterConditions = {};
 
@@ -87,11 +91,45 @@ const getProducts = async (filters = {}, page = 1, limit = 6) => {
   }
 };
 
-const getProductById = async (id) => {
+exports.getProductById = async (id) => {
   return await Product.findById(id);
 };
 
-module.exports = {
-  getProducts,
-  getProductById,
+// Function to handle product creation and image upload
+exports.createProduct = async (productData, files) => {
+  try {
+    const uploadedImages = [];
+
+    // Upload each file to Cloudinary
+    for (let i = 0; i < files.length; i++) {
+      const filePath = files[i].path;
+
+      // Upload image to Cloudinary
+      const result = await cloudinary.uploader.upload(filePath, {
+        resource_type: 'auto', // Auto detect file type
+      });
+
+      // Add the image URL to the uploadedImages array
+      uploadedImages.push(result.url);
+
+      // Remove the file after upload
+      fs.unlinkSync(filePath);
+    }
+
+    // Add the uploaded images to product data
+    productData.images = uploadedImages;
+
+    // Create a new product and save to the database
+    const newProduct = new Product(productData);
+    await newProduct.save();
+
+    return newProduct;
+  } catch (error) {
+    console.error('Error creating product:', error);
+    throw new Error('Error creating product');
+  }
+};
+
+exports.updateProduct = async (productId, updateData) => {
+  return Product.findByIdAndUpdate(productId, updateData, { new: true });
 };
