@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Users</title>
+    <!-- Ant Design CSS CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.24.8/antd.min.css"
+      integrity="sha512-zWswk...hash..."
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <div class="container mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
+      <!-- Title -->
+      <h1 class="text-3xl font-bold text-purple-600 mb-4">Manage Order</h1>
+
+      <!-- Filters -->
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <select
+          id="nameFilter"
+          class="ant-select w-full"
+          onchange="applyFilters()"
+        >
+          <option value="">Filter by Status</option>
+          <% const uniqueStatuses = [...new Set(orders.map(order =>
+          order.status))]; uniqueStatuses.forEach(status => { %>
+          <option value="<%= status %>"><%= status %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <!-- Ant Design Table -->
+      <div class="ant-table-wrapper">
+        <table id="userTable" class="ant-table ant-table-bordered w-full">
+          <!-- Table Header -->
+          <thead class="ant-table-thead">
+            <tr>
+              <th onclick="sortTable(0)">
+                Id <span class="sort-icon">▲▼</span>
+              </th>
+              <th onclick="sortTable(1)">
+                Username <span class="sort-icon">▲▼</span>
+              </th>
+              <th onclick="sortTable(2)">
+                Product <span class="sort-icon">▲▼</span>
+              </th>
+              <th>Status<span class="sort-icon"></span></th>
+              <th onclick="sortTime()">
+                CreateAt <span class="sort-icon">▲▼</span>
+              </th>
+            </tr>
+          </thead>
+
+          <!-- Table Body -->
+          <tbody id="userTableBody" class="ant-table-tbody">
+            <% orders.forEach(order => { %>
+            <tr>
+              <td class="border px-4 py-2"><%= order.id %></td>
+              <td class="border px-4 py-2"><%= order.username %></td>
+              <td class="border px-4 py-2"><%= order.product %></td>
+              <td class="border px-4 py-2"><%= order.status %></td>
+              <td
+                class="border px-4 py-2"
+                data-created-at="<%= order.createdAt %>"
+              >
+                <%= new Date(order.createdAt).toLocaleDateString('en-GB') %>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      let sortOrder = {};
+      function sortTime() {
+        const tableBody = document.getElementById("userTableBody");
+        const rows = Array.from(tableBody.querySelectorAll("tr"));
+
+        const columnIndex = 4;
+        sortOrder[columnIndex] = !sortOrder[columnIndex];
+
+        rows.sort((a, b) => {
+          const aDate = new Date(a.children[columnIndex].dataset.createdAt);
+          const bDate = new Date(b.children[columnIndex].dataset.createdAt);
+          return sortOrder[columnIndex] ? aDate - bDate : bDate - aDate;
+        });
+
+        rows.forEach((row) => tableBody.appendChild(row));
+
+        // Update the URL with sorting parameters
+        const url = new URL(window.location.href);
+        const sortDirection = sortOrder[columnIndex] ? "asc" : "desc";
+
+        url.searchParams.set("sort", "createat");
+        url.searchParams.set("order", sortDirection);
+
+        window.history.replaceState({}, "", url);
+      }
+
+      function sortTable(columnIndex) {
+        const tableBody = document.getElementById("userTableBody");
+        const rows = Array.from(tableBody.querySelectorAll("tr"));
+
+        // Toggle sort order
+        sortOrder[columnIndex] = !sortOrder[columnIndex];
+
+        rows.sort((a, b) => {
+          let aValue, bValue;
+
+          if (columnIndex === 4) {
+            // Sort by 'CreateAt'
+            aValue = new Date(a.children[columnIndex].dataset.createdAt);
+            bValue = new Date(b.children[columnIndex].dataset.createdAt);
+            return sortOrder[columnIndex] ? aValue - bValue : bValue - aValue;
+          } else {
+            // Sort other columns
+            aValue = a.children[columnIndex].textContent.trim();
+            bValue = b.children[columnIndex].textContent.trim();
+
+            if (!isNaN(aValue) && !isNaN(bValue)) {
+              // Compare numeric values
+              return sortOrder[columnIndex] ? aValue - bValue : bValue - aValue;
+            }
+
+            // Compare string values
+            return sortOrder[columnIndex]
+              ? aValue.localeCompare(bValue)
+              : bValue.localeCompare(aValue);
+          }
+        });
+
+        // Update the table with sorted rows
+        rows.forEach((row) => tableBody.appendChild(row));
+
+        // Update URL with sorting parameters
+        const url = new URL(window.location.href);
+        const sortColumn = tableBody.parentElement
+          .querySelectorAll("thead th")
+          [columnIndex].textContent.trim()
+          .slice(0, -3);
+        const sortDirection = sortOrder[columnIndex] ? "asc" : "desc";
+
+        url.searchParams.set("sort", sortColumn.toLowerCase());
+        url.searchParams.set("order", sortDirection);
+
+        window.history.replaceState({}, "", url);
+      }
+
+      function applyFilters() {
+        const statusFilterValue = document.getElementById("nameFilter").value;
+        const rows = document.querySelectorAll("#userTableBody tr");
+
+        rows.forEach((row) => {
+          const statusCell = row.children[3].textContent.trim();
+          const statusMatches =
+            !statusFilterValue || statusCell === statusFilterValue;
+
+          row.style.display = statusMatches ? "" : "none";
+        });
+
+        const url = new URL(window.location.href);
+        if (statusFilterValue) {
+          url.searchParams.set("status", statusFilterValue);
+        } else {
+          url.searchParams.delete("status");
+        }
+        window.history.replaceState({}, "", url);
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const nameFilterValue = urlParams.get("status");
+        const sortColumn = urlParams.get("sort");
+        const sortDirection = urlParams.get("order");
+
+        if (nameFilterValue) {
+          document.getElementById("nameFilter").value = nameFilterValue;
+        }
+
+        applyFilters();
+
+        if (sortColumn && sortDirection) {
+          const columnIndex = Array.from(
+            document.querySelectorAll("thead th")
+          ).findIndex(
+            (th) => th.textContent.trim().toLowerCase() === sortColumn
+          );
+
+          if (columnIndex >= 0) {
+            sortOrder[columnIndex] = sortDirection === "asc";
+            sortTable(columnIndex);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
