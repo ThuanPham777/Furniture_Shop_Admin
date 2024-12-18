@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Revenue Report</title>
+    <title>Product Report</title>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.24.8/antd.min.css"
@@ -32,21 +32,24 @@
         gap: 10px;
         justify-content: space-between;
       }
-      .ant-table {
-        margin-top: 20px;
+      .total-row {
+        font-weight: bold;
+        text-align: right;
+        background-color: #f6f6f6;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="title">Revenue Report</div>
+      <div class="title">Product Report</div>
 
       <!-- Filters -->
       <div class="filters">
         <select
           id="timeRange"
-          class="ant-select w-full"
-          onchange="fetchReport()"
+          class="ant-select"
+          style="width: 30%"
+          onchange="fetchProductReport()"
         >
           <option value="day">Day</option>
           <option value="week">Week</option>
@@ -56,71 +59,77 @@
           type="date"
           id="startDate"
           class="ant-input"
-          onchange="fetchReport()"
+          style="width: 30%"
+          onchange="fetchProductReport()"
         />
         <input
           type="date"
           id="endDate"
           class="ant-input"
-          onchange="fetchReport()"
+          style="width: 30%"
+          onchange="fetchProductReport()"
         />
       </div>
 
-      <!-- Revenue Table -->
-      <div class="ant-table-wrapper">
-        <table class="ant-table ant-table-bordered w-full">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Orders</th>
-              <th>Total Revenue</th>
-            </tr>
-          </thead>
-          <tbody id="reportTableBody">
-            <!-- Dynamic rows will be appended here -->
-          </tbody>
-        </table>
-      </div>
+      <!-- Product Table -->
+      <table class="ant-table ant-table-bordered">
+        <thead class="ant-table-thead">
+          <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Manufacturer</th>
+            <th>Orders</th>
+          </tr>
+        </thead>
+        <tbody class="ant-table-tbody">
+          <!-- Rows will be dynamically added here -->
+        </tbody>
+      </table>
     </div>
 
     <script>
-      function fetchReport() {
+      function fetchProductReport() {
         const timeRange = document.getElementById("timeRange").value;
         const startDate = document.getElementById("startDate").value;
         const endDate = document.getElementById("endDate").value;
 
         fetch(
-          `/getRevenueReport?timeRange=${timeRange}&startDate=${startDate}&endDate=${endDate}`
+          `/getProductReport?timeRange=${timeRange}&startDate=${startDate}&endDate=${endDate}`
         )
           .then((response) => {
             if (!response.ok) {
-              throw new Error("Failed to fetch report");
+              throw new Error("Failed to fetch product report");
             }
             return response.json();
           })
           .then((data) => {
-            const tableBody = document.getElementById("reportTableBody");
-            tableBody.innerHTML = ""; // Clear existing rows
+            const tableBody = document.querySelector(".ant-table-tbody");
+            tableBody.innerHTML = "";
 
-            data.forEach((item) => {
-              const row = document.createElement("tr");
-              row.innerHTML = `
-                <td>${item.date}</td>
-                <td>${item.orders}</td>
-                <td>$${item.revenue.toFixed(2)}</td>
-              `;
-              tableBody.appendChild(row);
-            });
+            if (data.length) {
+              data.forEach((item) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                  <td>${item.date}</td>
+                  <td>${item.product}</td>
+                  <td>${item.manufacturer}</td>
+                  <td>${item.orders}</td>
+                `;
+                tableBody.appendChild(row);
+              });
+            } else {
+              tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No data available</td></tr>`;
+            }
           })
           .catch((error) => {
             console.error(error);
-            alert("Error fetching report");
+            alert("Error fetching product report");
           });
       }
 
       // Fetch initial report
       document.addEventListener("DOMContentLoaded", () => {
-        fetchReport();
+        fetchProductReport();
       });
     </script>
   </body>
