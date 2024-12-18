@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Revenue Report</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.24.8/antd.min.css"
+      integrity="sha512-zWswk...hash..."
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <style>
+      .container {
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fff;
+      }
+      .title {
+        text-align: center;
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+      }
+      .filters {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+      }
+      .ant-table {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="title">Revenue Report</div>
+
+      <!-- Filters -->
+      <div class="filters">
+        <select
+          id="timeRange"
+          class="ant-select w-full"
+          onchange="fetchReport()"
+        >
+          <option value="day">Day</option>
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+        </select>
+        <input
+          type="date"
+          id="startDate"
+          class="ant-input"
+          onchange="fetchReport()"
+        />
+        <input
+          type="date"
+          id="endDate"
+          class="ant-input"
+          onchange="fetchReport()"
+        />
+      </div>
+
+      <!-- Revenue Table -->
+      <div class="ant-table-wrapper">
+        <table class="ant-table ant-table-bordered w-full">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Orders</th>
+              <th>Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="reportTableBody">
+            <!-- Dynamic rows will be appended here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      function fetchReport() {
+        const timeRange = document.getElementById("timeRange").value;
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+
+        fetch(
+          `/getRevenueReport?timeRange=${timeRange}&startDate=${startDate}&endDate=${endDate}`
+        )
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to fetch report");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            const tableBody = document.getElementById("reportTableBody");
+            tableBody.innerHTML = ""; // Clear existing rows
+
+            data.forEach((item) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                <td>${item.date}</td>
+                <td>${item.orders}</td>
+                <td>$${item.revenue.toFixed(2)}</td>
+              `;
+              tableBody.appendChild(row);
+            });
+          })
+          .catch((error) => {
+            console.error(error);
+            alert("Error fetching report");
+          });
+      }
+
+      // Fetch initial report
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchReport();
+      });
+    </script>
+  </body>
+</html>

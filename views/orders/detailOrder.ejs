@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>detail Details</title>
+    <!-- CSS Styling -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.24.8/antd.min.css"
+      integrity="sha512-zWswk...hash..."
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <style>
+      .details-container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fff;
+      }
+      .details-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="details-container">
+      <div class="details-title">Order Details</div>
+      <form>
+        <!-- Id -->
+        <div class="form-group">
+          <label>Id</label>
+          <input type="text" value="<%= detail.id %>" readonly />
+        </div>
+
+        <!-- detail -->
+        <div class="form-group">
+          <label>detail</label>
+          <input type="text" value="<%= detail.name %>" readonly />
+        </div>
+        <!-- Price -->
+        <div class="form-group">
+          <label>Price</label>
+          <input type="text" value="<%= detail.price %>" readonly />
+        </div>
+        <!-- Quantity -->
+        <div class="form-group">
+          <label>Quantity</label>
+          <input type="text" value="<%= detail.quantity %>" readonly />
+        </div>
+
+        <!-- Manufacturer -->
+        <div class="form-group">
+          <label>Manufacturer</label>
+          <input type="text" value="<%= detail.manufacturer %>" readonly />
+        </div>
+
+        <!-- Details -->
+        <div class="form-group">
+          <label>Details</label>
+          <textarea readonly><%= detail.details %></textarea>
+        </div>
+
+        <!-- Ship Cost -->
+        <div class="form-group">
+          <label>Ship Cost</label>
+          <input type="text" value="<%= detail.shipCost %>" readonly />
+        </div>
+
+        <!-- Total -->
+        <div class="form-group">
+          <label>Total</label>
+          <input type="text" value="<%= detail.total %>" readonly />
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

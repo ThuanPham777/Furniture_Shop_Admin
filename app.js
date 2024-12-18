@@ -320,7 +320,81 @@ app.get("/orders", function (req, res) {
 
   res.render("orders/orders", { orders });
 });
+app.get("/detailOrder", function (req, res) {
+  const { id } = req.query;
+  const details = [
+    {
+      id: "1",
+      name: "Chair",
+      price: 10,
+      quantity: 20,
+      manufacturer: "Company XYZ",
+      details: "This is a high-quality product.",
+      shipCost: 10,
+      total: 10 * 20 + 10,
+    },
+    {
+      id: "5",
+      name: "Chair",
+      price: 10,
+      quantity: 20,
+      manufacturer: "Company XYZ",
+      details: "This is a high-quality product.",
+      shipCost: 10,
+      total: 10 * 20 + 10,
+    },
+    {
+      id: "2",
+      name: "Chair",
+      price: 10,
+      quantity: 20,
+      manufacturer: "Company XYZ",
+      details: "This is a high-quality product.",
+      shipCost: 10,
+      total: 10 * 20 + 10,
+    },
+    {
+      id: "3",
+      name: "Chair",
+      price: 10,
+      quantity: 20,
+      manufacturer: "Company XYZ",
+      details: "This is a high-quality product.",
+      shipCost: 10,
+      total: 10 * 20 + 10,
+    },
+    {
+      id: "4",
+      name: "Chair",
+      price: 10,
+      quantity: 20,
+      manufacturer: "Company XYZ",
+      details: "This is a high-quality product.",
+      shipCost: 10,
+      total: 10 * 20 + 10,
+    },
+  ];
+  const detail = details.find((u) => u.id === id);
 
+  if (detail) {
+    res.render("orders/detailOrder", { detail });
+  } else {
+    res.status(404).send("User not found");
+  }
+
+  res.render("orders/orders", { orders });
+});
+app.post("/updateOrderStatus", (req, res) => {
+  const { id, status } = req.body;
+
+  const order = orders.find((order) => order.id === id);
+  if (order) {
+    order.status = status;
+    return res.json({ success: true, updatedStatus: status });
+  }
+
+  res.status(404).json({ success: false, message: "Order not found" });
+});
 app.use("/products", productRoutes);
 app.use("/api/products", apiProductRoutes);
 module.exports = app;
