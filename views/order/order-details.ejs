@@ -1,0 +1,75 @@
+<div class="container mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
+    <!-- Title -->
+    <h1 class="text-3xl font-bold text-purple-600 mb-6">Order Details</h1>
+
+    <!-- Order Information -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+        <!-- Customer Information -->
+        <div>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Customer Information</h2>
+            <div class="bg-gray-50 p-4 rounded-lg shadow">
+                <p><strong>Name:</strong>
+                    <%= order.address.firstName %>
+                        <%= order.address.lastName %>
+                </p>
+                <p><strong>Phone:</strong>
+                    <%= order.address.phoneNumber %>
+                </p>
+                <p><strong>Address:</strong>
+                    <%= order.address.address %>, <%= order.address.city %>, <%= order.address.province %>, <%=
+                                    order.address.country %> - <%= order.address.zipCode %>
+                </p>
+            </div>
+        </div>
+
+        <!-- Order Status and Date -->
+        <div>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Order Information</h2>
+            <div class="bg-gray-50 p-4 rounded-lg shadow">
+                <p><strong>Order ID:</strong>
+                    <%= order._id %>
+                </p>
+                <p><strong>Order Date:</strong>
+                    <%= new Date(order.orderDate).toLocaleDateString('en-GB') %>
+                </p>
+                <p><strong>Status:</strong> <span class="text-green-500 font-bold">
+                        <%= order.status %>
+                    </span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products List -->
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">Ordered Products</h2>
+    <div class="bg-gray-50 p-4 rounded-lg shadow">
+        <ul class="space-y-4">
+            <% order.items.forEach(item=> { %>
+                <li class="flex items-center space-x-4">
+                    <img src="<%= item.productId.images[0] %>" alt="<%= item.productId.name %>"
+                        class="w-16 h-16 object-cover rounded-md border">
+                    <div>
+                        <strong class="text-gray-800">
+                            <%= item.productId.name %>
+                        </strong>
+                        <p class="text-sm text-gray-500">Price: $<%= item.productId.salePrice || item.productId.price %>
+                        </p>
+                        <p class="text-sm text-gray-500">Quantity: <%= item.quantity %>
+                        </p>
+                    </div>
+                </li>
+                <% }); %>
+        </ul>
+    </div>
+
+    <!-- Total Amount -->
+    <div class="mt-6 flex justify-between items-center bg-gray-50 p-4 rounded-lg shadow">
+        <h3 class="text-xl font-semibold text-gray-800">Total Amount</h3>
+        <p class="text-lg font-bold text-green-600">$<%= order.totalAmount.toFixed(2) %>
+        </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-6 flex justify-end space-x-4">
+        <a href="/orders" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Back to Orders</a>
+    </div>
+</div>

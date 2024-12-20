@@ -1,52 +1,6 @@
 // services/orderService.js
-const Cart = require('../../cart/models/cartModel');
 const Order = require('../models/orderModel');
-
-exports.createOrder = async (userId, paymentMethod, address, transactionId) => {
-  try {
-    // Lấy các sản phẩm trong giỏ hàng của người dùng
-    const cartItems = await Cart.find({ userId }).populate('productId');
-    if (!cartItems || cartItems.length === 0) {
-      throw new Error('Cart is empty');
-    }
-
-    // Tính tổng số tiền
-    let totalAmount = 0;
-    const items = cartItems.map((item) => {
-      const price = item.productId.salePrice || item.productId.price; // Giá của sản phẩm
-      totalAmount += price * item.quantity;
-      return {
-        productId: item.productId._id,
-        quantity: item.quantity,
-        price,
-      };
-    });
-
-    // Tạo đơn hàng
-    const newOrder = new Order({
-      userId,
-      items,
-      totalAmount,
-      address,
-      payment: {
-        method: paymentMethod,
-        transactionId,
-        date: new Date(),
-      },
-      status: 'Pending', // Đơn hàng ban đầu có trạng thái là "Pending"
-    });
-
-    // Lưu đơn hàng
-    await newOrder.save();
-
-    // Xóa giỏ hàng sau khi đã tạo đơn
-    await Cart.deleteMany({ userId });
-
-    return newOrder; // Trả về đơn hàng vừa tạo
-  } catch (error) {
-    throw new Error('Error creating order: ' + error.message);
-  }
-};
+const User = require('../../users/models/userModel');
 
 exports.getOrderById = async (orderId) => {
   try {
@@ -63,16 +17,30 @@ exports.getOrderById = async (orderId) => {
   }
 };
 
-exports.getAllOrdersByUserID = async (userId) => {
+exports.getAllOrders = async () => {
   try {
-    const orders = await Order.find({ userId })
-      .populate('userId')
+    const orders = await Order.find({})
+      .populate('userId', 'firstName lastName email') // Chỉ lấy thông tin cần thiết từ User
       .populate('items.productId');
     return orders;
   } catch (error) {
     console.error('Error fetching orders:', error);
-    return res
-      .status(500)
-      .json({ success: false, error: 'Có lỗi xảy ra, vui lòng thử lại!' });
+    throw new Error('Could not fetch orders');
   }
+};
+
+// Function to update the order status
+exports.updateOrderStatus = async (orderId, status) => {
+  if (!orderId || !status) {
+    throw new Error('Order ID and status are required');
+  }
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new Error('Order not found');
+  }
+
+  order.status = status;
+  await order.save();
+  return order;
 };
