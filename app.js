@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const expressLayouts = require('express-ejs-layouts');
 const productRoutes = require('./app/products/routes/productRoutes');
 const orderRoutes = require('./app/order/routes/orderRoutes');
+const reportRoutes = require('./app/reports/routes/reportRoutes');
 const apiProductRoutes = require('./app/api/products/apiProductRoutes');
 const apiOrderRoutes = require('./app/api/orders/apiOrderRoutes');
 const users = [
@@ -139,7 +140,7 @@ app.use(cookieParser());
 connectDB();
 
 app.get('/', function (req, res) {
-  res.render('dashboard/dashboard', { users });
+  res.render('dashboard/dashboard');
 });
 app.get('/accounts', function (req, res) {
   const currentUser = 'Henrygaul';
@@ -329,78 +330,6 @@ app.get('/reportsProduct', async (req, res) => {
     res.render('reportsProduct/reportsProduct', { data: [] });
   }
 });
-
-app.get('/getRevenueReport', (req, res) => {
-  const { timeRange, startDate, endDate } = req.query;
-  let filteredOrders = [...orders];
-
-  // Filter by date range
-  if (startDate && endDate) {
-    filteredOrders = filteredOrders.filter((order) => {
-      const orderDate = new Date(order.date);
-      return orderDate >= new Date(startDate) && orderDate <= new Date(endDate);
-    });
-  }
-
-  // Aggregate data based on time range
-  let aggregatedData;
-  if (timeRange === 'day') {
-    aggregatedData = filteredOrders.map((order) => ({
-      date: order.date,
-      product: order.product,
-      manufacturer: order.manufacturer,
-      orders: 1,
-      revenue: order.revenue,
-    }));
-  } else if (timeRange === 'week') {
-    const weekMap = {};
-    filteredOrders.forEach((order) => {
-      const weekNumber = `Week ${getWeekNumber(new Date(order.date))}`;
-      if (!weekMap[weekNumber]) {
-        weekMap[weekNumber] = {
-          date: weekNumber,
-          product: 'N/A',
-          manufacturer: 'N/A',
-          orders: 0,
-          revenue: 0,
-        };
-      }
-      weekMap[weekNumber].orders += 1;
-      weekMap[weekNumber].revenue += order.revenue;
-    });
-    aggregatedData = Object.values(weekMap);
-  } else if (timeRange === 'month') {
-    const monthMap = {};
-    filteredOrders.forEach((order) => {
-      const month = new Date(order.date).toLocaleString('en-US', {
-        month: 'long',
-        year: 'numeric',
-      });
-      if (!monthMap[month]) {
-        monthMap[month] = {
-          date: month,
-          product: 'N/A',
-          manufacturer: 'N/A',
-          orders: 0,
-          revenue: 0,
-        };
-      }
-      monthMap[month].orders += 1;
-      monthMap[month].revenue += order.revenue;
-    });
-    aggregatedData = Object.values(monthMap);
-  } else {
-    aggregatedData = filteredOrders.map((order) => ({
-      date: order.date,
-      product: order.product,
-      manufacturer: order.manufacturer,
-      orders: 1,
-      revenue: order.revenue,
-    }));
-  }
-
-  res.json(aggregatedData);
-});
 app.get('/getProductReport', (req, res) => {
   const { timeRange, startDate, endDate } = req.query;
   let filteredOrders = [...orders];
@@ -477,4 +406,6 @@ app.use('/orders', orderRoutes);
 app.use('/api/orders', apiOrderRoutes);
 app.use('/products', productRoutes);
 app.use('/api/products', apiProductRoutes);
+app.use('/reports', reportRoutes);
+
 module.exports = app;

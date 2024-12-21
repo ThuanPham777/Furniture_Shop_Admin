@@ -6,7 +6,7 @@
         <!-- Filters -->
         <div class="grid grid-cols-2 gap-4 mb-6">
             <!-- Filter by Status -->
-            <select id="statusFilter" class="ant-select w-full" onchange="applyFilters()">
+            <select id="statusFilter" class="w-full p-2 border border-gray-300 rounded-md" onchange="applyFilters()">
                 <option value="">Filter by Status</option>
                 <option value="Pending">Pending</option>
                 <option value="Processing">Processing</option>
@@ -15,52 +15,52 @@
             </select>
 
             <!-- Order by Time -->
-            <select id="timeOrder" class="ant-select w-full" onchange="applySorting()">
+            <select id="timeOrder" class="w-full p-2 border border-gray-300 rounded-md" onchange="applySorting()">
                 <option value="desc">Order by Time: Newest First</option>
                 <option value="asc">Order by Time: Oldest First</option>
             </select>
         </div>
 
-        <!-- Ant Design Table -->
-        <div class="ant-table-wrapper">
-            <table id="userTable" class="ant-table ant-table-bordered w-full">
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table id="userTable" class="min-w-full border border-gray-300 rounded-md">
                 <!-- Table Header -->
-                <thead class="ant-table-thead">
+                <thead class="bg-gray-200">
                     <tr>
-                        <th>Customer Name</th>
-                        <th>Phone Number</th>
-                        <th>Address</th>
-                        <th>Products</th>
-                        <th>Total Amount</th>
-                        <th>Status</th>
-                        <th>Order Date</th>
-                        <th>View</th>
+                        <th class="px-4 py-2 text-left border">Customer Name</th>
+                        <th class="px-4 py-2 text-left border">Phone Number</th>
+                        <th class="px-4 py-2 text-left border">Address</th>
+                        <th class="px-4 py-2 text-left border">Products</th>
+                        <th class="px-4 py-2 text-left border">Total Amount</th>
+                        <th class="px-4 py-2 text-left border">Status</th>
+                        <th class="px-4 py-2 text-left border">Order Date</th>
+                        <th class="px-4 py-2 text-center border">View</th>
                     </tr>
                 </thead>
 
                 <!-- Table Body -->
-                <tbody id="userTableBody" class="ant-table-tbody">
+                <tbody id="userTableBody">
                     <% orders.forEach(order=> { %>
-                        <tr id="order-<%= order._id %>">
+                        <tr class="bg-white hover:bg-gray-50">
                             <!-- Customer Name -->
-                            <td class="border px-4 py-2">
+                            <td class="px-4 py-2 border">
                                 <%= order.address.firstName %>
                                     <%= order.address.lastName %>
                             </td>
 
                             <!-- Phone Number -->
-                            <td class="border px-4 py-2">
+                            <td class="px-4 py-2 border">
                                 <%= order.address.phoneNumber %>
                             </td>
 
                             <!-- Address -->
-                            <td class="border px-4 py-2">
+                            <td class="px-4 py-2 border">
                                 <%= order.address.address %>, <%= order.address.city %>, <%= order.address.province %>,
                                             <%= order.address.country %> - <%= order.address.zipCode %>
                             </td>
 
                             <!-- Products -->
-                            <td class="border px-4 py-2">
+                            <td class="px-4 py-2 border">
                                 <ul class="space-y-2">
                                     <% order.items.forEach(item=> { %>
                                         <li class="flex items-center space-x-4">
@@ -81,26 +81,31 @@
                             </td>
 
                             <!-- Total Amount -->
-                            <td class="border px-4 py-2">$<%= order.totalAmount.toFixed(2) %>
+                            <td class="px-4 py-2 border">$<%= order.totalAmount.toFixed(2) %>
                             </td>
 
                             <!-- Status -->
-                            <td class="border px-4 py-2">
-                                <select class="ant-select w-full status-select" onchange="updateStatus('<%= order._id %>', this.value)">
-                                    <option value="Pending" <%=order.status==='Pending' ? 'selected' : '' %>>Pending</option>
-                                    <option value="Processing" <%=order.status==='Processing' ? 'selected' : '' %>>Processing</option>
-                                    <option value="Shipped" <%=order.status==='Shipped' ? 'selected' : '' %>>Shipped</option>
-                                    <option value="Delivered" <%=order.status==='Delivered' ? 'selected' : '' %>>Delivered</option>
+                            <td class="px-4 py-2 border">
+                                <select class="w-full p-2 border border-gray-300 rounded-md"
+                                    onchange="updateStatus('<%= order._id %>', this.value)">
+                                    <option value="Pending" <%=order.status==='Pending' ? 'selected' : '' %>>Pending
+                                    </option>
+                                    <option value="Processing" <%=order.status==='Processing' ? 'selected' : '' %>
+                                        >Processing</option>
+                                    <option value="Shipped" <%=order.status==='Shipped' ? 'selected' : '' %>>Shipped
+                                    </option>
+                                    <option value="Delivered" <%=order.status==='Delivered' ? 'selected' : '' %>
+                                        >Delivered</option>
                                 </select>
                             </td>
 
                             <!-- Order Date -->
-                            <td class="border px-4 py-2">
+                            <td class="px-4 py-2 border">
                                 <%= new Date(order.orderDate).toLocaleDateString('en-GB') %>
                             </td>
 
                             <!-- View -->
-                            <td class="border px-4 py-2 text-center">
+                            <td class="px-4 py-2 text-center border">
                                 <a href="/orders/<%= order._id %>" class="text-blue-600 hover:underline">View</a>
                             </td>
                         </tr>
@@ -109,7 +114,7 @@
             </table>
         </div>
     </div>
-
+</div>
     <script>
         function updateStatus(orderId, newStatus) {
                 fetch('/api/orders/updateOrderStatus', {
