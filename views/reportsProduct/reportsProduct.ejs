@@ -9,17 +9,19 @@
 </head>
 
 <body class="bg-gray-100 font-sans leading-normal tracking-normal">
-  <div class="container max-w-7xl mx-auto px-8 py-6 bg-white rounded-lg shadow-md">
+  <div class="container max-w-7xl mx-auto px-8 py-8 bg-white rounded-lg shadow-lg">
     <!-- Title -->
-    <div class="text-center mb-6">
-      <h1 class="text-3xl font-bold text-blue-600">Product Report</h1>
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-extrabold text-blue-600">Product Report</h1>
+      <p class="text-gray-600 mt-2">An overview of product performance</p>
     </div>
 
     <!-- Filters -->
-    <div class="flex flex-wrap gap-4 mb-6">
+    <div class="flex flex-wrap gap-6 mb-8 items-end">
       <div class="flex-1">
         <label for="timeRange" class="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
-        <select id="timeRange" class="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+        <select id="timeRange"
+          class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
           onchange="fetchProductReport()">
           <option value="day">Day</option>
           <option value="week">Week</option>
@@ -28,22 +30,23 @@
       </div>
       <div class="flex-1">
         <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-        <input type="date" id="startDate" class="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+        <input type="date" id="startDate"
+          class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
           onchange="fetchProductReport()" />
       </div>
       <div class="flex-1">
         <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-        <input type="date" id="endDate" class="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+        <input type="date" id="endDate"
+          class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
           onchange="fetchProductReport()" />
       </div>
-      <button class="self-end bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700"
-        onclick="fetchProductReport()">Apply Filters</button>
     </div>
 
     <!-- Product Table -->
     <div class="overflow-x-auto">
-      <div class="border rounded-lg shadow-md w-full">
-        <div class="grid grid-cols-6 bg-gray-200 font-bold text-gray-700 py-2 px-4">
+      <div class="border rounded-lg shadow-md">
+        <div class="grid grid-cols-7 bg-blue-100 font-semibold text-blue-700 py-3 px-4 rounded-t-lg">
+          <div>Image</div>
           <div>Product Name</div>
           <div>Price</div>
           <div>Category</div>
@@ -65,7 +68,18 @@
       const startDate = document.getElementById("startDate").value;
       const endDate = document.getElementById("endDate").value;
 
-      fetch(`/reports/getTopRevenueProducts?timeRange=${timeRange}&startDate=${startDate}&endDate=${endDate}`)
+      // Update URL with query parameters
+      const params = new URLSearchParams({
+        timeRange,
+        startDate,
+        endDate,
+      });
+
+      // Use History API to change URL
+      history.replaceState(null, "", `?${params.toString()}`);
+
+      // Fetch data from server
+      fetch(`/reports/getTopRevenueProducts?${params.toString()}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Failed to fetch product report");
@@ -76,11 +90,15 @@
           const tableBody = document.getElementById("tableBody");
           tableBody.innerHTML = "";
 
+          console.log("data: " + JSON.stringify(data, null, 2));
           if (data.length > 0) {
             data.forEach((item) => {
               const row = document.createElement("div");
-              row.className = "grid grid-cols-6 py-2 px-4";
+              row.className = "grid grid-cols-7 py-4 px-4 hover:bg-gray-50";
               row.innerHTML = `
+                <div>
+                  <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-md">
+                </div>
                 <div>${item.name || "N/A"}</div>
                 <div>$${(item.price || 0).toFixed(2)}</div>
                 <div>${item.category || "N/A"}</div>
@@ -91,7 +109,7 @@
               tableBody.appendChild(row);
             });
           } else {
-            tableBody.innerHTML = `<div class="text-center py-4 text-gray-500">No data available</div>`;
+            tableBody.innerHTML = `<div class="text-center py-6 text-gray-500">No data available</div>`;
           }
         })
         .catch((error) => {
@@ -99,6 +117,7 @@
           alert("Error fetching product report");
         });
     }
+
 
     // Fetch initial report
     document.addEventListener("DOMContentLoaded", () => {

@@ -282,38 +282,6 @@ app.post('/accounts/ban', (req, res) => {
     res.status(404).send('User not found');
   }
 });
-const orders = [
-  {
-    date: '2024-12-01',
-    product: 'Product A',
-    manufacturer: 'Company X',
-    revenue: 100,
-  },
-  {
-    date: '2024-12-02',
-    product: 'Product B',
-    manufacturer: 'Company Y',
-    revenue: 200,
-  },
-  {
-    date: '2024-12-03',
-    product: 'Product C',
-    manufacturer: 'Company Z',
-    revenue: 150,
-  },
-  {
-    date: '2024-12-04',
-    product: 'Product D',
-    manufacturer: 'Company X',
-    revenue: 300,
-  },
-  {
-    date: '2024-11-10',
-    product: 'Product E',
-    manufacturer: 'Company Y',
-    revenue: 400,
-  },
-];
 app.get('/reportsRevenue', async (req, res) => {
   try {
     res.render('reportsRevenue/reportsRevenue', { data: [] });
@@ -330,77 +298,6 @@ app.get('/reportsProduct', async (req, res) => {
     res.render('reportsProduct/reportsProduct', { data: [] });
   }
 });
-app.get('/getProductReport', (req, res) => {
-  const { timeRange, startDate, endDate } = req.query;
-  let filteredOrders = [...orders];
-
-  // Filter by date range
-  if (startDate && endDate) {
-    filteredOrders = filteredOrders.filter((order) => {
-      const orderDate = new Date(order.date);
-      return orderDate >= new Date(startDate) && orderDate <= new Date(endDate);
-    });
-  }
-
-  // Aggregate data based on time range
-  let aggregatedData;
-  if (timeRange === 'day') {
-    aggregatedData = filteredOrders.map((order) => ({
-      date: order.date,
-      product: order.product,
-      manufacturer: order.manufacturer,
-      orders: 1,
-    }));
-  } else if (timeRange === 'week') {
-    const weekMap = {};
-    filteredOrders.forEach((order) => {
-      const weekNumber = `Week ${getWeekNumber(new Date(order.date))}`;
-      if (!weekMap[weekNumber]) {
-        weekMap[weekNumber] = {
-          date: weekNumber,
-          product: order.product,
-          manufacturer: order.manufacturer,
-          orders: 0,
-        };
-      }
-      weekMap[weekNumber].orders += 1;
-    });
-    aggregatedData = Object.values(weekMap);
-  } else if (timeRange === 'month') {
-    const monthMap = {};
-    filteredOrders.forEach((order) => {
-      const month = new Date(order.date).toLocaleString('en-US', {
-        month: 'long',
-        year: 'numeric',
-      });
-      if (!monthMap[month]) {
-        monthMap[month] = {
-          date: month,
-          product: order.product,
-          manufacturer: order.manufacturer,
-          orders: 0,
-        };
-      }
-      monthMap[month].orders += 1;
-    });
-    aggregatedData = Object.values(monthMap);
-  } else {
-    aggregatedData = filteredOrders.map((order) => ({
-      date: order.date,
-      product: order.product,
-      manufacturer: order.manufacturer,
-      orders: 1,
-    }));
-  }
-
-  res.json(aggregatedData);
-});
-// Utility Function: Get Week Number
-function getWeekNumber(d) {
-  const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
-  const pastDaysOfYear = (d - firstDayOfYear) / 86400000;
-  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-}
 
 app.use('/orders', orderRoutes);
 app.use('/api/orders', apiOrderRoutes);

@@ -99,41 +99,91 @@ exports.generateRevenueReport = async (timeRange, startDate, endDate) => {
   }
 };
 
-exports.fetchTopRevenueProducts = async (startDate, endDate, limit = 10) => {
-  const matchStage = {};
-  if (startDate && endDate) {
-    matchStage.orderDate = {
-      $gte: new Date(startDate),
-      $lte: new Date(endDate),
-    };
-  }
+exports.fetchTopRevenueProducts = async (
+  timeRange,
+  startDate,
+  endDate,
+  limit = 10
+) => {
+  try {
+    const matchStage = {};
 
-  return Order.aggregate([
-    { $match: matchStage },
-    { $unwind: '$items' },
-    {
-      $lookup: {
-        from: 'products',
-        localField: 'items.productId',
-        foreignField: '_id',
-        as: 'productDetails',
-      },
-    },
-    { $unwind: { path: '$productDetails', preserveNullAndEmptyArrays: false } },
-    {
-      $group: {
-        _id: '$items.productId',
-        name: { $first: '$productDetails.name' },
-        price: { $first: '$productDetails.price' },
-        category: { $first: '$productDetails.category' },
-        manufacturer: { $first: '$productDetails.manufacturer' },
-        totalQuantity: { $sum: '$items.quantity' },
-        totalRevenue: {
-          $sum: { $multiply: ['$items.quantity', '$items.price'] },
+    // Process timeRange
+    if (timeRange) {
+      const now = new Date();
+      if (timeRange === 'day') {
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0); // Start of day
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999); // End of day
+      } else if (timeRange === 'week') {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+        startDate = new Date(startOfWeek);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (timeRange === 'month') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1); // Start of month
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // End of month
+        endDate.setHours(23, 59, 59, 999);
+      }
+    }
+
+    // Add date range to match stage
+    if (startDate && endDate) {
+      matchStage.orderDate = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    console.log('matchStage:', matchStage);
+
+    // Perform aggregation
+    const results = await Order.aggregate([
+      { $match: matchStage },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'productDetails',
         },
       },
-    },
-    { $sort: { totalRevenue: -1 } },
-    { $limit: parseInt(limit, 10) },
-  ]);
+      {
+        $unwind: { path: '$productDetails', preserveNullAndEmptyArrays: false },
+      },
+      {
+        $group: {
+          _id: '$items.productId',
+          image: {
+            $first: {
+              $ifNull: [
+                { $arrayElemAt: ['$productDetails.images', 0] },
+                'default_image.jpg',
+              ],
+            },
+          },
+          name: { $first: '$productDetails.name' },
+          price: { $first: '$productDetails.price' },
+          category: { $first: '$productDetails.category' },
+          manufacturer: { $first: '$productDetails.manufacturer' },
+          totalQuantity: { $sum: '$items.quantity' },
+          totalRevenue: {
+            $sum: { $multiply: ['$items.quantity', '$items.price'] },
+          },
+        },
+      },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: parseInt(limit, 10) },
+    ]);
+
+    console.log('Results:', results);
+    return results;
+  } catch (error) {
+    console.error('Error in fetchTopRevenueProducts:', error);
+    throw new Error('Failed to fetch top revenue products');
+  }
 };
