@@ -19,4 +19,6 @@ router.put(
   apiProductControllers.editProduct
 );
 
+router.delete('/delete/:productId', apiProductControllers.deleteProduct);
+
 module.exports = router;

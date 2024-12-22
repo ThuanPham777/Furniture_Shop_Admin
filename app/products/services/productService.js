@@ -207,3 +207,42 @@ exports.updateProduct = async (productId, updateData, files) => {
     throw new Error('Error updating product');
   }
 };
+
+exports.deleteProduct = async (productId) => {
+  try {
+    // Tìm sản phẩm theo ID
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    // Xóa các tệp trong thư mục trên Cloudinary
+    const folderName = `products/${product.name}`;
+
+    try {
+      await cloudinary.api.delete_resources_by_prefix(folderName);
+      console.log('Resources deleted successfully');
+
+      // Xóa thư mục (nếu cần)
+      await cloudinary.api.delete_folder(folderName);
+      console.log('Folder deleted successfully');
+    } catch (cloudinaryError) {
+      console.error(
+        'Error deleting folder or resources on Cloudinary:',
+        cloudinaryError.message
+      );
+      throw new Error('Error deleting folder on Cloudinary');
+    }
+
+    // Xóa sản phẩm khỏi cơ sở dữ liệu
+    const deletedProduct = await Product.findByIdAndDelete(productId);
+    if (!deletedProduct) {
+      throw new Error('Product deletion failed');
+    }
+
+    console.log(`Product with ID ${productId} deleted successfully.`);
+  } catch (error) {
+    console.error('Error deleting product:', error.message);
+    throw new Error(error.message || 'Error deleting product');
+  }
+};
