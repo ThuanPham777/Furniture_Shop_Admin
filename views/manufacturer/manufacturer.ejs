@@ -1,0 +1,80 @@
+<div class="p-6 bg-gray-50 rounded-lg shadow-md overflow-x-auto">
+    <!-- Header: Add Manufacturer & Search -->
+    <div class="flex justify-between items-center mb-4">
+        <!-- Add Manufacturer Button -->
+        <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-200">
+            Add Manufacturer
+        </button>
+        <!-- Search Bar -->
+        <div class="relative">
+            <input type="text" id="search" placeholder="Search Manufacturer..."
+                class="w-64 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                🔍
+            </span>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <table class="table-auto w-full border-collapse border border-gray-200 rounded-lg shadow-md">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="px-4 py-2 text-left font-semibold text-gray-700 border border-gray-300">Manufacturer</th>
+                <th class="px-4 py-2 text-left font-semibold text-gray-700 border border-gray-300">List of Products</th>
+                <th class="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% manufacturers.forEach(manufacturer=> { %>
+                <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
+                    <!-- Manufacturer Name -->
+                    <td class="px-4 py-3 text-gray-800 border border-gray-300">
+                        <%= manufacturer.name %>
+                    </td>
+
+                    <!-- List of Products -->
+                    <td class="px-4 py-3 border border-gray-300">
+                        <div class="flex flex-col gap-4">
+                            <% manufacturer.listIdProduct.forEach(product=> { %>
+                                <div class="flex items-center gap-4 border-b last:border-none pb-3">
+                                    <img src="<%= product.images[0] %>" alt="product"
+                                        class="w-24 h-24 object-cover rounded-lg shadow-sm" />
+                                    <div>
+                                        <p class="font-semibold text-gray-800">
+                                            <%= product.name %>
+                                        </p>
+                                        <p class="text-gray-600 text-sm">Price: <%= product.salePrice || product.price
+                                                %>
+                                        </p>
+                                        <p class="text-gray-600 text-sm">Total Stock: <%= product.totalStock %>
+                                        </p>
+                                        <p class="text-gray-600 text-sm">Category: <%= product.category %>
+                                        </p>
+                                        <p class="text-gray-600 text-sm">Material: <%= product.material %>
+                                        </p>
+                                    </div>
+                                    <!-- Delete Product Button -->
+                                    <button class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                                        Delete
+                                    </button>
+                                </div>
+                                <% }); %>
+                        </div>
+                    </td>
+
+                    <!-- Action Buttons -->
+                    <td class="px-4 py-3 text-center border border-gray-300">
+                        <button
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">
+                            Edit
+                        </button>
+                        <button
+                            class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                <% }); %>
+        </tbody>
+    </table>
+</div>

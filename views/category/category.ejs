@@ -1,0 +1,206 @@
+<div class="p-6 bg-gray-50 rounded-lg shadow-md overflow-x-auto">
+    <!-- Header: Add Category & Search -->
+    <div class="flex justify-between items-center mb-4">
+        <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-200">
+            Add Category
+        </button>
+        <div class="relative">
+            <input type="text" id="search" placeholder="Search category..." value="<%= filters?.search || '' %>"
+                class="filter-input px-4 py-2 border rounded-md w-full mt-2" onchange="updateSearchFilter(this)"
+                class="w-64 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                🔍
+            </span>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <table class="table-auto w-full border-collapse border border-gray-200 rounded-lg shadow-md">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="px-4 py-2 text-left font-semibold text-gray-700 border border-gray-300">Category</th>
+                <th class="px-4 py-2 text-left font-semibold text-gray-700 border border-gray-300">List of Products</th>
+                <th class="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">Action</th>
+            </tr>
+        </thead>
+        <tbody id="category-list">
+            <% categories.forEach(category=> { %>
+                <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
+                    <td class="px-4 py-3 text-gray-800 border border-gray-300">
+                        <%= category.name %>
+                    </td>
+                    <td class="px-4 py-3 border border-gray-300">
+                        <div class="flex flex-col gap-4">
+                            <% category.listIdProduct.forEach(product=> { %>
+                                <div class="flex items-center gap-4 border-b last:border-none pb-3">
+                                    <img src="<%= product.images[0] %>" alt="product"
+                                        class="w-24 h-24 object-cover rounded-lg shadow-sm" />
+                                    <div>
+                                        <p class="font-semibold text-gray-800">
+                                            <%= product.name %>
+                                        </p>
+                                        <p class="text-gray-600 text-sm">Price: <%= product.salePrice || product.price
+                                                %>
+                                        </p>
+                                        <p class="text-gray-600 text-sm">Total Stock: <%= product.totalStock %>
+                                        </p>
+                                        <p class="text-gray-600 text-sm">Manufacturer: <%= product.manufacturer %>
+                                        </p>
+                                        <p class="text-gray-600 text-sm">Material: <%= product.material %>
+                                        </p>
+                                    </div>
+                                    <button
+                                        class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                                        Delete
+                                    </button>
+                                </div>
+                                <% }); %>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center border border-gray-300">
+                        <button
+                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">
+                            Edit
+                        </button>
+                        <button
+                            class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+                <% }); %>
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="mt-6 flex justify-center items-center gap-2" id="pagination">
+        <% if (currentPage> 1) { %>
+            <button onclick="changePage('<%= currentPage - 1 %>')"
+                class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Previous</button>
+            <% } %>
+
+                <% for (let i=1; i <=totalPages; i++) { %>
+                    <button onclick="changePage('<%= i %>')"
+                        class="px-4 py-2 <%= i === currentPage ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800' %> rounded hover:bg-blue-600 transition">
+                        <%= i %>
+                    </button>
+                    <% } %>
+
+                        <% if (currentPage < totalPages) { %>
+                            <button onclick="changePage('<%= currentPage + 1 %>')"
+                                class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Next</button>
+                            <% } %>
+    </div>
+</div>
+
+<script>
+    // Function to handle search filter update
+    function updateSearchFilter(input) {
+        const searchQuery = input.value;
+        const currentURL = new URL(window.location.href);
+        currentURL.searchParams.set('search', searchQuery);
+        currentURL.searchParams.delete('page');
+        history.pushState({ search: searchQuery }, "", currentURL.toString()); // Update URL without reload
+        fetchCategories(searchQuery);
+    }
+
+    // Function to fetch categories based on the search query and page number
+    async function fetchCategories(searchQuery = '', page = 1) {
+        const response = await fetch(`/api/categoryProducts?search=${searchQuery}&page=${page}`);
+        const data = await response.json();
+
+        // Update the category list in the table
+        const categoryList = document.getElementById('category-list');
+        categoryList.innerHTML = ''; // Clear the existing list
+
+        data.categories.forEach(category => {
+            const row = document.createElement('tr');
+            row.classList.add('odd:bg-white', 'even:bg-gray-50', 'hover:bg-gray-100');
+            row.innerHTML = `
+                <td class="px-4 py-3 text-gray-800 border border-gray-300">${category.name}</td>
+                <td class="px-4 py-3 border border-gray-300">
+                    <div class="flex flex-col gap-4">
+                        ${category.listIdProduct.map(product => `
+                            <div class="flex items-center gap-4 border-b last:border-none pb-3">
+                                <img src="${product.images[0]}" alt="product" class="w-24 h-24 object-cover rounded-lg shadow-sm" />
+                                <div>
+                                    <p class="font-semibold text-gray-800">${product.name}</p>
+                                    <p class="text-gray-600 text-sm">Price: ${product.salePrice || product.price}</p>
+                                    <p class="text-gray-600 text-sm">Total Stock: ${product.totalStock}</p>
+                                    <p class="text-gray-600 text-sm">Manufacturer: ${product.manufacturer}</p>
+                                    <p class="text-gray-600 text-sm">Material: ${product.material}</p>
+                                </div>
+                                <button class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">Delete</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-center border border-gray-300">
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">Edit</button>
+                    <button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">Delete</button>
+                </td>
+            `;
+            categoryList.appendChild(row);
+        });
+
+        // Update pagination (pass the search query to keep it in URL)
+        updatePagination(data.currentPage, data.totalPages, searchQuery);
+    }
+
+    // Function to update pagination based on the current page
+    function updatePagination(currentPage, totalPages, searchQuery) {
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = ''; // Clear current pagination
+
+        // Previous button
+        if (currentPage > 1) {
+            const prevLink = document.createElement('button');
+            prevLink.textContent = 'Previous';
+            prevLink.onclick = () => changePage(currentPage - 1);
+            prevLink.classList.add('px-4', 'py-2', 'bg-blue-500', 'text-white', 'rounded', 'hover:bg-blue-600', 'transition');
+            pagination.appendChild(prevLink);
+        }
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const pageLink = document.createElement('button');
+            pageLink.textContent = i;
+            pageLink.classList.add('px-4', 'py-2', 'text-gray-800', 'rounded', 'hover:bg-blue-600', 'transition');
+            if (i === currentPage) {
+                pageLink.classList.add('bg-blue-700', 'text-white');
+            }
+            pageLink.onclick = () => changePage(i);
+            pagination.appendChild(pageLink);
+        }
+
+        // Next button
+        if (currentPage < totalPages) {
+            const nextLink = document.createElement('button');
+            nextLink.textContent = 'Next';
+            nextLink.onclick = () => changePage(currentPage + 1);
+            nextLink.classList.add('px-4', 'py-2', 'bg-blue-500', 'text-white', 'rounded', 'hover:bg-blue-600', 'transition');
+            pagination.appendChild(nextLink);
+        }
+    }
+
+    // Function to change the page and fetch data for the selected page
+    function changePage(page) {
+        const searchQuery = document.getElementById('search').value;
+        fetchCategories(searchQuery, page);
+        const currentURL = new URL(window.location.href);
+        currentURL.searchParams.set('page', page); // Update page in URL
+        history.pushState({ page }, "", currentURL.toString()); // Update URL without reload
+    }
+
+    // Initialize fetch on page load if a search or page is present in the URL
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get('search') || '';
+        const page = parseInt(urlParams.get('page')) || 1;
+
+        document.getElementById('search').value = searchQuery; // Set the search input value
+
+        // Fetch categories based on the search query and page
+        fetchCategories(searchQuery, page);
+    });
+</script>

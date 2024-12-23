@@ -9,6 +9,9 @@ const orderRoutes = require('./app/order/routes/orderRoutes');
 const reportRoutes = require('./app/reports/routes/reportRoutes');
 const apiProductRoutes = require('./app/api/products/apiProductRoutes');
 const apiOrderRoutes = require('./app/api/orders/apiOrderRoutes');
+const categoryRoutes = require('./app/category/routes/categoryRoutes');
+const apiCategoryRoutes = require('./app/api/category/apiCategoryRoutes');
+const manufacturerRoutes = require('./app/manufacturer/routes/manufacturerRoutes');
 const users = [
   {
     name: 'Courtney Henry',
@@ -304,5 +307,8 @@ app.use('/api/orders', apiOrderRoutes);
 app.use('/products', productRoutes);
 app.use('/api/products', apiProductRoutes);
 app.use('/reports', reportRoutes);
+app.use('/categoryProducts', categoryRoutes);
+app.use('/api/categoryProducts', apiCategoryRoutes);
+app.use('/manufacturerProducts', manufacturerRoutes);
 
 module.exports = app;
