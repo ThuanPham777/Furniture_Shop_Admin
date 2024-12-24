@@ -21,8 +21,8 @@ exports.getCategories = async (req, res) => {
 };
 exports.addCategory = async (req, res) => {
   try {
-    const { categoryName } = req.body;
-    const newCategory = await categoryService.addCategory(categoryName);
+    const { name } = req.body;
+    const newCategory = await categoryService.addCategory(name);
     res.json({
       success: true,
       message: 'Category added successfully!',
@@ -37,14 +37,14 @@ exports.addCategory = async (req, res) => {
 exports.editCategory = async (req, res) => {
   try {
     const categoryId = req.params.categoryId;
-    const { categoryName } = req.body;
+    const { name } = req.body;
     const categoryExists = await categoryService.categoryExists(categoryId);
     if (!categoryExists) {
       return res.status(404).send('Category not found');
     }
     const updatedCategory = await categoryService.editCategory(
       categoryId,
-      categoryName
+      name
     );
 
     res.json({

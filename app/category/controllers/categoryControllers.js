@@ -22,3 +22,15 @@ exports.renderCategoryPage = async (req, res) => {
     res.status(500).send('Something went wrong!');
   }
 };
+
+exports.renderAddCategory = async (req, res) => {
+  try {
+    const existingCategory = await categoryService.findCategoryById(
+      req.params.categoryId
+    );
+    res.render('category/add-category', { category: existingCategory || null });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Something went wrong!');
+  }
+};

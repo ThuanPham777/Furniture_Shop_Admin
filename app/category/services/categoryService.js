@@ -1,5 +1,9 @@
 const Category = require('../model/categoryModel');
-
+const Product = require('../../products/models/productModel');
+exports.getAllCategoryNames = async () => {
+  const categories = await Category.find({}, 'name').lean();
+  return categories.map((category) => category.name);
+};
 exports.findAllCategoriesWithProducts = async (
   filters = {},
   page = 1,
@@ -50,14 +54,37 @@ exports.editCategory = async (categoryId, categoryName) => {
 };
 
 exports.deleteCategory = async (categoryId) => {
-  const deletedCategory = await Category.findByIdAndDelete(categoryId);
-  if (!deletedCategory) {
-    throw new Error('Category not found');
+  try {
+    // Lấy thông tin category cần xóa
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    // Cập nhật các sản phẩm để category = null
+    await Product.updateMany(
+      { category: category.name }, // Tìm sản phẩm thuộc category
+      { $unset: { category: '' } } // Xóa liên kết category
+    );
+
+    // Xóa category
+    await Category.findByIdAndDelete(categoryId);
+
+    console.log(
+      `Category "${category.name}" and its association removed successfully.`
+    );
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    throw error;
   }
-  return deletedCategory;
 };
 
 exports.categoryExists = async (categoryId) => {
   const category = await Category.findById(categoryId);
   return !!category;
+};
+
+exports.findCategoryById = async (categoryId) => {
+  const category = await Category.findById(categoryId);
+  return category;
 };

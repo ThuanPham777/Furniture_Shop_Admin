@@ -1,7 +1,8 @@
 <div class="p-6 bg-gray-50 rounded-lg shadow-md overflow-x-auto">
     <!-- Header: Add Category & Search -->
     <div class="flex justify-between items-center mb-4">
-        <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-200">
+        <button onclick="navigateToAddCategory()"
+            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-200">
             Add Category
         </button>
         <div class="relative">
@@ -30,42 +31,52 @@
                         <%= category.name %>
                     </td>
                     <td class="px-4 py-3 border border-gray-300">
-                        <div class="flex flex-col gap-4">
-                            <% category.listIdProduct.forEach(product=> { %>
-                                <div class="flex items-center gap-4 border-b last:border-none pb-3">
-                                    <img src="<%= product.images[0] %>" alt="product"
-                                        class="w-24 h-24 object-cover rounded-lg shadow-sm" />
-                                    <div>
-                                        <p class="font-semibold text-gray-800">
-                                            <%= product.name %>
-                                        </p>
-                                        <p class="text-gray-600 text-sm">Price: <%= product.salePrice || product.price
-                                                %>
-                                        </p>
-                                        <p class="text-gray-600 text-sm">Total Stock: <%= product.totalStock %>
-                                        </p>
-                                        <p class="text-gray-600 text-sm">Manufacturer: <%= product.manufacturer %>
-                                        </p>
-                                        <p class="text-gray-600 text-sm">Material: <%= product.material %>
-                                        </p>
-                                    </div>
-                                    <button
-                                        class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
-                                        Delete
-                                    </button>
+                        <% if (category.listIdProduct.length===0) { %>
+                            <p class="text-gray-500 italic">No products</p>
+                            <% } else { %>
+                                <div class="flex flex-col gap-4">
+                                    <% category.listIdProduct.forEach(product=> { %>
+                                        <div class="flex items-center gap-4 border-b last:border-none pb-3">
+                                            <img src="<%= product.images[0] %>" alt="product"
+                                                class="w-24 h-24 object-cover rounded-lg shadow-sm" />
+                                            <div>
+                                                <p class="font-semibold text-gray-800">
+                                                    <%= product.name %>
+                                                </p>
+                                                <p class="text-gray-600 text-sm">Price: <%= product.salePrice ||
+                                                        product.price %>
+                                                </p>
+                                                <p class="text-gray-600 text-sm">Total Stock: <%= product.totalStock %>
+                                                </p>
+                                                <p class="text-gray-600 text-sm">Manufacturer: <%= product.manufacturer
+                                                        %>
+                                                </p>
+                                                <p class="text-gray-600 text-sm">Material: <%= product.material %>
+                                                </p>
+                                            </div>
+                                            <button onclick="openDeleteModal('<%= product._id %>')"
+                                                class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                                                Delete
+                                            </button>
+                                        </div>
+                                        <% }); %>
                                 </div>
-                                <% }); %>
-                        </div>
+                                <% } %>
                     </td>
                     <td class="px-4 py-3 text-center border border-gray-300">
-                        <button
-                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">
-                            Edit
-                        </button>
-                        <button
-                            class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
-                            Delete
-                        </button>
+                        <% if (category.listIdProduct.length===0) { %>
+                            <!-- Hide buttons if no products -->
+                            <p class="text-gray-500 italic">No actions available</p>
+                            <% } else { %>
+                                <button onclick="navigateToEditCategory('<%= category._id %>')"
+                                    class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">
+                                    Edit
+                                </button>
+                                <button onclick="deleteCategory('<%= category._id %>')"
+                                    class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                                    Delete
+                                </button>
+                                <% } %>
                     </td>
                 </tr>
                 <% }); %>
@@ -91,21 +102,49 @@
                                 class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Next</button>
                             <% } %>
     </div>
+
+
+
+    <!-- Modal Confirm Delete -->
+    <div id="deleteModal" class="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center hidden">
+        <div class="bg-white p-6 rounded-md w-1/3">
+            <h2 class="text-xl mb-4">Are you sure you want to delete this product?</h2>
+            <div class="flex justify-between">
+                <button onclick="deleteProduct()"
+                    class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Yes,
+                    Delete</button>
+                <button onclick="closeDeleteModal()"
+                    class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+
 
 <script>
     // Function to handle search filter update
     function updateSearchFilter(input) {
         const searchQuery = input.value;
         const currentURL = new URL(window.location.href);
+        console.log("currentURL: " + currentURL)
+
         currentURL.searchParams.set('search', searchQuery);
-        currentURL.searchParams.delete('page');
-        history.pushState({ search: searchQuery }, "", currentURL.toString()); // Update URL without reload
+
+        // Only delete 'page' if a new search query is entered
+        if (currentURL.searchParams.get('page')) {
+            currentURL.searchParams.delete('page');
+        }
+
+        console.log("currentURL after delte page: " + currentURL)
+
+        history.pushState({ search: searchQuery }, "", currentURL.toString());
+        console.log(JSON.stringify(history, null, 2));
         fetchCategories(searchQuery);
     }
 
     // Function to fetch categories based on the search query and page number
-    async function fetchCategories(searchQuery = '', page = 1) {
+    async function fetchCategories(searchQuery = '', page) {
         const response = await fetch(`/api/categoryProducts?search=${searchQuery}&page=${page}`);
         const data = await response.json();
 
@@ -118,27 +157,42 @@
             row.classList.add('odd:bg-white', 'even:bg-gray-50', 'hover:bg-gray-100');
             row.innerHTML = `
                 <td class="px-4 py-3 text-gray-800 border border-gray-300">${category.name}</td>
-                <td class="px-4 py-3 border border-gray-300">
-                    <div class="flex flex-col gap-4">
-                        ${category.listIdProduct.map(product => `
-                            <div class="flex items-center gap-4 border-b last:border-none pb-3">
-                                <img src="${product.images[0]}" alt="product" class="w-24 h-24 object-cover rounded-lg shadow-sm" />
-                                <div>
-                                    <p class="font-semibold text-gray-800">${product.name}</p>
-                                    <p class="text-gray-600 text-sm">Price: ${product.salePrice || product.price}</p>
-                                    <p class="text-gray-600 text-sm">Total Stock: ${product.totalStock}</p>
-                                    <p class="text-gray-600 text-sm">Manufacturer: ${product.manufacturer}</p>
-                                    <p class="text-gray-600 text-sm">Material: ${product.material}</p>
-                                </div>
-                                <button class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">Delete</button>
-                            </div>
-                        `).join('')}
+<td class="px-4 py-3 border border-gray-300">
+    ${category.listIdProduct.length === 0 ? `
+        <p class="text-gray-500 italic">No products</p>
+    ` : `
+        <div class="flex flex-col gap-4">
+            ${category.listIdProduct.map(product => `
+                <div class="flex items-center gap-4 border-b last:border-none pb-3">
+                    <img src="${product.images[0]}" alt="product" class="w-24 h-24 object-cover rounded-lg shadow-sm" />
+                    <div>
+                        <p class="font-semibold text-gray-800">${product.name}</p>
+                        <p class="text-gray-600 text-sm">Price: ${product.salePrice || product.price}</p>
+                        <p class="text-gray-600 text-sm">Total Stock: ${product.totalStock}</p>
+                        <p class="text-gray-600 text-sm">Manufacturer: ${product.manufacturer}</p>
+                        <p class="text-gray-600 text-sm">Material: ${product.material}</p>
                     </div>
-                </td>
-                <td class="px-4 py-3 text-center border border-gray-300">
-                    <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">Edit</button>
-                    <button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">Delete</button>
-                </td>
+                    <button
+                    onclick="openDeleteModal('${product._id}')"
+                    class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">Delete</button>
+                </div>
+            `).join('')}
+        </div>
+    `}
+</td>
+<td class="px-4 py-3 text-center border border-gray-300">
+    ${category.listIdProduct.length === 0 ? `
+        <p class="text-gray-500 italic">No actions available</p>
+    ` : `
+        <button
+        onclick="navigateToEditCategory('${category._id}')"
+        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">Edit</button>
+        <button
+        onclick="deleteCategory('${category._id}')"
+         class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">Delete</button>
+    `}
+</td>
+
             `;
             categoryList.appendChild(row);
         });
@@ -203,4 +257,65 @@
         // Fetch categories based on the search query and page
         fetchCategories(searchQuery, page);
     });
+
+    function navigateToAddCategory() {
+        window.location.href = '/categoryProducts/add';
+    }
+
+    function navigateToEditCategory(categoryId) {
+        console.log(`Navigating to edit category with ID: ${categoryId}`);
+        window.location.href = `/categoryProducts/edit/${categoryId}`;
+    }
+
+
+    let currentProductId = null;
+
+    function openDeleteModal(productId) {
+        console.log(`Opening delete modal for product with ID: ${productId}`);
+        currentProductId = productId;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+    async function deleteProduct() {
+        if (currentProductId) {
+            const response = await fetch(`/api/products/delete/${currentProductId}`, { method: 'DELETE' });
+
+            if (response.ok) {
+                alert('Product deleted successfully');
+                fetchCategories();
+            } else {
+                console.error('Failed to delete the product');
+            }
+
+            //console.log("Deleting product with ID:", currentProductId);
+            closeDeleteModal();
+
+        }
+
+    }
+
+    async function deleteCategory(categoryId) {
+        // Hiển thị hộp thoại xác nhận
+        const isConfirmed = confirm('Are you sure to delete this category?');
+
+        if (isConfirmed) {
+            // Người dùng đã bấm "OK", tiến hành xóa
+            const response = await fetch(`/api/categoryProducts/delete/${categoryId}`, { method: 'DELETE' });
+
+            if (response.ok) {
+                alert('Category deleted successfully');
+                fetchCategories(); // Cập nhật danh sách danh mục
+            } else {
+                alert('Failed to delete category');
+            }
+        } else {
+            // Người dùng bấm "Cancel", không làm gì cả
+            console.log('Delete action canceled');
+        }
+    }
+
+
 </script>

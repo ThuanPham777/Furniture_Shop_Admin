@@ -8,8 +8,8 @@ router.get('/', apiCategoryControllers.getCategories);
 
 router.post('/add', apiCategoryControllers.addCategory);
 
-router.put('/:categoryId/edit', apiCategoryControllers.editCategory);
+router.put('/edit/:categoryId', apiCategoryControllers.editCategory);
 
-router.delete('/:categoryId/delete', apiCategoryControllers.deleteCategory);
+router.delete('/delete/:categoryId', apiCategoryControllers.deleteCategory);
 
 module.exports = router;

@@ -1,4 +1,6 @@
 const Product = require('../models/productModel');
+const Category = require('../../category/model/categoryModel');
+const Manufacturer = require('../../manufacturer/model/manufacturerModel');
 const cloudinary = require('../../../config/cloudinary');
 
 //--------
@@ -140,6 +142,24 @@ exports.createProduct = async (productData, files) => {
     const newProduct = new Product(productData);
     await newProduct.save();
 
+    // Cập nhật Manufacturer
+    if (productData.manufacturer) {
+      const manufacturer = await Manufacturer.findOneAndUpdate(
+        { name: productData.manufacturer }, // Tìm theo tên manufacturer
+        { $push: { listIdProduct: newProduct._id } }, // Cập nhật listIdProduct
+        { new: true, upsert: true, useFindAndModify: false } // Tạo mới nếu không tồn tại
+      );
+    }
+
+    // Cập nhật Category
+    if (productData.category) {
+      const category = await Category.findOneAndUpdate(
+        { name: productData.category }, // Tìm theo tên category
+        { $push: { listIdProduct: newProduct._id } }, // Cập nhật listIdProduct
+        { new: true, upsert: true, useFindAndModify: false } // Tạo mới nếu không tồn tại
+      );
+    }
+
     return newProduct;
   } catch (error) {
     console.error('Error creating product:', error);
@@ -194,11 +214,52 @@ exports.updateProduct = async (productId, updateData, files) => {
       }
     }
 
+    // Xử lý manufacturer và category
+    // Kiểm tra và cập nhật Manufacturer
+    if (
+      updateData.manufacturer &&
+      updateData.manufacturer !== existingProduct.manufacturer
+    ) {
+      // Xóa sản phẩm khỏi listIdProduct của Manufacturer cũ
+      await Manufacturer.findOneAndUpdate(
+        { name: existingProduct.manufacturer },
+        { $pull: { listIdProduct: productId } },
+        { useFindAndModify: false }
+      );
+
+      // Thêm sản phẩm vào Manufacturer mới
+      await Manufacturer.findOneAndUpdate(
+        { name: updateData.manufacturer },
+        { $push: { listIdProduct: productId } },
+        { new: true, upsert: true, useFindAndModify: false }
+      );
+    }
+
+    // Kiểm tra và cập nhật Category
+    if (
+      updateData.category &&
+      updateData.category !== existingProduct.category
+    ) {
+      // Xóa sản phẩm khỏi listIdProduct của Category cũ
+      await Category.findOneAndUpdate(
+        { name: existingProduct.category },
+        { $pull: { listIdProduct: productId } },
+        { useFindAndModify: false }
+      );
+
+      // Thêm sản phẩm vào Category mới
+      await Category.findOneAndUpdate(
+        { name: updateData.category },
+        { $push: { listIdProduct: productId } },
+        { new: true, upsert: true, useFindAndModify: false }
+      );
+    }
+
     // Update the product with the new data
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       updateData,
-      { new: true }
+      { new: true, useFindAndModify: false }
     );
 
     return updatedProduct;
