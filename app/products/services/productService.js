@@ -99,44 +99,42 @@ exports.getProductById = async (id) => {
 // Function to handle product creation and image upload
 exports.createProduct = async (productData, files) => {
   try {
-    if (!files || files.length === 0) {
-      throw new Error('No files uploaded');
-    }
+    if (files && files.length > 0) {
+      const uploadedImages = [];
+      const folderName = `products/${productData.name}`;
 
-    const uploadedImages = [];
-    const folderName = `products/${productData.name}`;
+      // Use Promise.all to wait for all uploads to complete
+      const uploadPromises = files.map((file) => {
+        return new Promise((resolve, reject) => {
+          const fileBuffer = file.buffer;
 
-    // Use Promise.all to wait for all uploads to complete
-    const uploadPromises = files.map((file) => {
-      return new Promise((resolve, reject) => {
-        const fileBuffer = file.buffer;
-
-        cloudinary.uploader
-          .upload_stream(
-            {
-              resource_type: 'auto', // Auto detect file type
-              folder: folderName, // Upload to a specific folder in Cloudinary
-            },
-            (error, result) => {
-              if (error) {
-                console.error('Cloudinary upload error:', error);
-                reject(error); // Reject the promise if there's an error
-              } else {
-                uploadedImages.push(result.url); // Add image URL to array
-                resolve(); // Resolve the promise after upload completes
+          cloudinary.uploader
+            .upload_stream(
+              {
+                resource_type: 'auto', // Auto detect file type
+                folder: folderName, // Upload to a specific folder in Cloudinary
+              },
+              (error, result) => {
+                if (error) {
+                  console.error('Cloudinary upload error:', error);
+                  reject(error); // Reject the promise if there's an error
+                } else {
+                  uploadedImages.push(result.url); // Add image URL to array
+                  resolve(); // Resolve the promise after upload completes
+                }
               }
-            }
-          )
-          .end(fileBuffer); // End the upload stream
+            )
+            .end(fileBuffer); // End the upload stream
+        });
       });
-    });
 
-    // Wait for all image uploads to finish
-    await Promise.all(uploadPromises);
-    console.log(uploadedImages);
+      // Wait for all image uploads to finish
+      await Promise.all(uploadPromises);
+      console.log(uploadedImages);
 
-    // After all uploads are complete, assign the uploaded images to product data
-    productData.images = uploadedImages;
+      // After all uploads are complete, assign the uploaded images to product data
+      productData.images = uploadedImages;
+    }
 
     // Create a new product and save to the database
     const newProduct = new Product(productData);
