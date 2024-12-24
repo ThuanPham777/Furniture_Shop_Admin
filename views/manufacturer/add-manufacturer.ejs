@@ -1,0 +1,61 @@
+<div class="container mx-auto max-w-4xl p-8 bg-white shadow-md rounded-lg my-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">
+        <%= manufacturer ? "Edit Manufacturer" : "Add Manufacturer" %>
+    </h1>
+    <form id="manufacturer-form" class="space-y-8">
+        <!-- Name -->
+        <div class="form-group">
+            <label for="name" class="block text-md font-medium text-gray-700">Manufacturer Name</label>
+            <input type="text" id="name" name="name" value="<%= manufacturer ? manufacturer.name : '' %>"
+                class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-lime-500 focus:ring-lime-500 p-2 text-md"
+                required>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit"
+            class="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 focus:outline-none focus:ring focus:ring-lime-300 text-md">
+            <%= manufacturer ? "Update manufacturer" : "Add manufacturer" %>
+        </button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById('manufacturer-form');
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault(); // Ngăn chặn hành động submit mặc định
+
+            // Lấy dữ liệu từ form
+            const formData = new FormData(form);
+
+            // Xác định URL và phương thức
+            const url = '<%= manufacturer ? `/api/manufacturerProducts/edit/${manufacturer._id}` : "/api/manufacturerProducts/add" %>';
+            const method = '<%= manufacturer ? "PUT" : "POST" %>';
+
+            // Gửi dữ liệu lên server
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: formData.get('name')
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Manufacturer has been successfully added/updated!');
+                        window.location.href = '/manufacturerProducts'; // Chuyển hướng sau khi thành công
+                    } else {
+                        alert('Something went wrong!');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing your request.');
+                });
+        });
+    });
+</script>

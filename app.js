@@ -12,6 +12,7 @@ const apiOrderRoutes = require('./app/api/orders/apiOrderRoutes');
 const categoryRoutes = require('./app/category/routes/categoryRoutes');
 const apiCategoryRoutes = require('./app/api/category/apiCategoryRoutes');
 const manufacturerRoutes = require('./app/manufacturer/routes/manufacturerRoutes');
+const apiManufacturerRoutes = require('./app/api/manufacturer/apiManufacturerRoutes');
 const users = [
   {
     name: 'Courtney Henry',
@@ -310,5 +311,6 @@ app.use('/reports', reportRoutes);
 app.use('/categoryProducts', categoryRoutes);
 app.use('/api/categoryProducts', apiCategoryRoutes);
 app.use('/manufacturerProducts', manufacturerRoutes);
+app.use('/api/manufacturerProducts', apiManufacturerRoutes);
 
 module.exports = app;

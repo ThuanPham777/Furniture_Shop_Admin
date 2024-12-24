@@ -1,13 +1,13 @@
 <div class="p-6 bg-gray-50 rounded-lg shadow-md overflow-x-auto">
     <!-- Header: Add Manufacturer & Search -->
     <div class="flex justify-between items-center mb-4">
-        <!-- Add Manufacturer Button -->
-        <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-200">
+        <button onclick="navigateToAddManufacturer()"
+            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition duration-200">
             Add Manufacturer
         </button>
-        <!-- Search Bar -->
         <div class="relative">
-            <input type="text" id="search" placeholder="Search Manufacturer..."
+            <input type="text" id="search" placeholder="Search manufacturer..." value="<%= filters?.search || '' %>"
+                class="filter-input px-4 py-2 border rounded-md w-full mt-2" onchange="updateSearchFilter(this)"
                 class="w-64 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
             <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                 🔍
@@ -24,57 +24,296 @@
                 <th class="px-4 py-2 text-center font-semibold text-gray-700 border border-gray-300">Action</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="manufacturer-list">
             <% manufacturers.forEach(manufacturer=> { %>
                 <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
-                    <!-- Manufacturer Name -->
                     <td class="px-4 py-3 text-gray-800 border border-gray-300">
                         <%= manufacturer.name %>
                     </td>
-
-                    <!-- List of Products -->
                     <td class="px-4 py-3 border border-gray-300">
-                        <div class="flex flex-col gap-4">
-                            <% manufacturer.listIdProduct.forEach(product=> { %>
-                                <div class="flex items-center gap-4 border-b last:border-none pb-3">
-                                    <img src="<%= product.images[0] %>" alt="product"
-                                        class="w-24 h-24 object-cover rounded-lg shadow-sm" />
-                                    <div>
-                                        <p class="font-semibold text-gray-800">
-                                            <%= product.name %>
-                                        </p>
-                                        <p class="text-gray-600 text-sm">Price: <%= product.salePrice || product.price
-                                                %>
-                                        </p>
-                                        <p class="text-gray-600 text-sm">Total Stock: <%= product.totalStock %>
-                                        </p>
-                                        <p class="text-gray-600 text-sm">Category: <%= product.category %>
-                                        </p>
-                                        <p class="text-gray-600 text-sm">Material: <%= product.material %>
-                                        </p>
-                                    </div>
-                                    <!-- Delete Product Button -->
-                                    <button class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
-                                        Delete
-                                    </button>
+                        <% if (manufacturer.listIdProduct.length===0) { %>
+                            <p class="text-gray-500 italic">No products</p>
+                            <% } else { %>
+                                <div class="flex flex-col gap-4">
+                                    <% manufacturer.listIdProduct.forEach(product=> { %>
+                                        <div class="flex items-center gap-4 border-b last:border-none pb-3">
+                                            <img src="<%= product.images[0] %>" alt="product"
+                                                class="w-24 h-24 object-cover rounded-lg shadow-sm" />
+                                            <div>
+                                                <p class="font-semibold text-gray-800">
+                                                    <%= product.name %>
+                                                </p>
+                                                <p class="text-gray-600 text-sm">Price: <%= product.salePrice ||
+                                                        product.price %>
+                                                </p>
+                                                <p class="text-gray-600 text-sm">Total Stock: <%= product.totalStock %>
+                                                </p>
+                                                <p class="text-gray-600 text-sm">Manufacturer: <%= product.manufacturer
+                                                        %>
+                                                </p>
+                                                <p class="text-gray-600 text-sm">Material: <%= product.material %>
+                                                </p>
+                                            </div>
+                                            <button onclick="openDeleteModal('<%= product._id %>')"
+                                                class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                                                Delete
+                                            </button>
+                                        </div>
+                                        <% }); %>
                                 </div>
-                                <% }); %>
-                        </div>
+                                <% } %>
                     </td>
-
-                    <!-- Action Buttons -->
                     <td class="px-4 py-3 text-center border border-gray-300">
-                        <button
-                            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">
-                            Edit
-                        </button>
-                        <button
-                            class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
-                            Delete
-                        </button>
+                        <% if (manufacturer.listIdProduct.length===0) { %>
+                            <!-- Hide buttons if no products -->
+                            <p class="text-gray-500 italic">No actions available</p>
+                            <% } else { %>
+                                <button onclick="navigateToEditManufacturer('<%= manufacturer._id %>')"
+                                    class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">
+                                    Edit
+                                </button>
+                                <button onclick="deleteManufacturer('<%= manufacturer._id %>')"
+                                    class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">
+                                    Delete
+                                </button>
+                                <% } %>
                     </td>
                 </tr>
                 <% }); %>
         </tbody>
     </table>
+
+    <!-- Pagination -->
+    <div class="mt-6 flex justify-center items-center gap-2" id="pagination">
+        <% if (currentPage> 1) { %>
+            <button onclick="changePage('<%= currentPage - 1 %>')"
+                class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Previous</button>
+            <% } %>
+
+                <% for (let i=1; i <=totalPages; i++) { %>
+                    <button onclick="changePage('<%= i %>')"
+                        class="px-4 py-2 <%= i === currentPage ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800' %> rounded hover:bg-blue-600 transition">
+                        <%= i %>
+                    </button>
+                    <% } %>
+
+                        <% if (currentPage < totalPages) { %>
+                            <button onclick="changePage('<%= currentPage + 1 %>')"
+                                class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">Next</button>
+                            <% } %>
+    </div>
+
+
+
+    <!-- Modal Confirm Delete -->
+    <div id="deleteModal" class="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center hidden">
+        <div class="bg-white p-6 rounded-md w-1/3">
+            <h2 class="text-xl mb-4">Are you sure you want to delete this product?</h2>
+            <div class="flex justify-between">
+                <button onclick="deleteProduct()"
+                    class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Yes,
+                    Delete</button>
+                <button onclick="closeDeleteModal()"
+                    class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">Cancel</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+
+
+<script>
+    // Function to handle search filter update
+    function updateSearchFilter(input) {
+        const searchQuery = input.value;
+        const currentURL = new URL(window.location.href);
+        console.log("currentURL: " + currentURL)
+
+        currentURL.searchParams.set('search', searchQuery);
+
+        // Only delete 'page' if a new search query is entered
+        if (currentURL.searchParams.get('page')) {
+            currentURL.searchParams.delete('page');
+        }
+
+        console.log("currentURL after delte page: " + currentURL)
+
+        history.pushState({ search: searchQuery }, "", currentURL.toString());
+        console.log(JSON.stringify(history, null, 2));
+        fetchManufacturers(searchQuery);
+    }
+
+    // Function to fetch manufacturers based on the search query and page number
+    async function fetchManufacturers(searchQuery = '', page) {
+        const response = await fetch(`/api/manufacturerProducts?search=${searchQuery}&page=${page}`);
+        const data = await response.json();
+
+        // Update the Manufacturer list in the table
+        const manufacturerList = document.getElementById('manufacturer-list');
+        manufacturerList.innerHTML = ''; // Clear the existing list
+
+        data.manufacturers.forEach(manufacturer => {
+            const row = document.createElement('tr');
+            row.classList.add('odd:bg-white', 'even:bg-gray-50', 'hover:bg-gray-100');
+            row.innerHTML = `
+                <td class="px-4 py-3 text-gray-800 border border-gray-300">${manufacturer.name}</td>
+<td class="px-4 py-3 border border-gray-300">
+    ${manufacturer.listIdProduct.length === 0 ? `
+        <p class="text-gray-500 italic">No products</p>
+    ` : `
+        <div class="flex flex-col gap-4">
+            ${manufacturer.listIdProduct.map(product => `
+                <div class="flex items-center gap-4 border-b last:border-none pb-3">
+                    <img src="${product.images[0]}" alt="product" class="w-24 h-24 object-cover rounded-lg shadow-sm" />
+                    <div>
+                        <p class="font-semibold text-gray-800">${product.name}</p>
+                        <p class="text-gray-600 text-sm">Price: ${product.salePrice || product.price}</p>
+                        <p class="text-gray-600 text-sm">Total Stock: ${product.totalStock}</p>
+                        <p class="text-gray-600 text-sm">Manufacturer: ${product.manufacturer}</p>
+                        <p class="text-gray-600 text-sm">Material: ${product.material}</p>
+                    </div>
+                    <button
+                    onclick="openDeleteModal('${product._id}')"
+                    class="ml-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">Delete</button>
+                </div>
+            `).join('')}
+        </div>
+    `}
+</td>
+<td class="px-4 py-3 text-center border border-gray-300">
+    ${manufacturer.listIdProduct.length === 0 ? `
+        <p class="text-gray-500 italic">No actions available</p>
+    ` : `
+        <button
+        onclick="navigateToEditManufacturer('${manufacturer._id}')"
+        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">Edit</button>
+        <button
+        onclick="deleteManufacturer('${manufacturer._id}')"
+         class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition duration-200">Delete</button>
+    `}
+</td>
+
+            `;
+            manufacturerList.appendChild(row);
+        });
+
+        // Update pagination (pass the search query to keep it in URL)
+        updatePagination(data.currentPage, data.totalPages, searchQuery);
+    }
+
+    // Function to update pagination based on the current page
+    function updatePagination(currentPage, totalPages, searchQuery) {
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = ''; // Clear current pagination
+
+        // Previous button
+        if (currentPage > 1) {
+            const prevLink = document.createElement('button');
+            prevLink.textContent = 'Previous';
+            prevLink.onclick = () => changePage(currentPage - 1);
+            prevLink.classList.add('px-4', 'py-2', 'bg-blue-500', 'text-white', 'rounded', 'hover:bg-blue-600', 'transition');
+            pagination.appendChild(prevLink);
+        }
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const pageLink = document.createElement('button');
+            pageLink.textContent = i;
+            pageLink.classList.add('px-4', 'py-2', 'text-gray-800', 'rounded', 'hover:bg-blue-600', 'transition');
+            if (i === currentPage) {
+                pageLink.classList.add('bg-blue-700', 'text-white');
+            }
+            pageLink.onclick = () => changePage(i);
+            pagination.appendChild(pageLink);
+        }
+
+        // Next button
+        if (currentPage < totalPages) {
+            const nextLink = document.createElement('button');
+            nextLink.textContent = 'Next';
+            nextLink.onclick = () => changePage(currentPage + 1);
+            nextLink.classList.add('px-4', 'py-2', 'bg-blue-500', 'text-white', 'rounded', 'hover:bg-blue-600', 'transition');
+            pagination.appendChild(nextLink);
+        }
+    }
+
+    // Function to change the page and fetch data for the selected page
+    function changePage(page) {
+        const searchQuery = document.getElementById('search').value;
+        fetchManufacturers(searchQuery, page);
+        const currentURL = new URL(window.location.href);
+        currentURL.searchParams.set('page', page); // Update page in URL
+        history.pushState({ page }, "", currentURL.toString()); // Update URL without reload
+    }
+
+    // Initialize fetch on page load if a search or page is present in the URL
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchQuery = urlParams.get('search') || '';
+        const page = parseInt(urlParams.get('page')) || 1;
+
+        document.getElementById('search').value = searchQuery; // Set the search input value
+
+        // Fetch manufacturers based on the search query and page
+        fetchManufacturers(searchQuery, page);
+    });
+
+    function navigateToAddManufacturer() {
+        window.location.href = '/manufacturerProducts/add';
+    }
+
+    function navigateToEditManufacturer(manufacturerId) {
+        console.log(`Navigating to edit Manufacturer with ID: ${manufacturerId}`);
+        window.location.href = `/manufacturerProducts/edit/${manufacturerId}`;
+    }
+
+
+    let currentProductId = null;
+
+    function openDeleteModal(productId) {
+        console.log(`Opening delete modal for product with ID: ${productId}`);
+        currentProductId = productId;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+    async function deleteProduct() {
+        if (currentProductId) {
+            const response = await fetch(`/api/products/delete/${currentProductId}`, { method: 'DELETE' });
+
+            if (response.ok) {
+                alert('Product deleted successfully');
+                fetchManufacturers();
+            } else {
+                console.error('Failed to delete the product');
+            }
+
+            //console.log("Deleting product with ID:", currentProductId);
+            closeDeleteModal();
+
+        }
+
+    }
+
+    async function deleteManufacturer(manufacturerId) {
+        // Hiển thị hộp thoại xác nhận
+        const isConfirmed = confirm('Are you sure to delete this Manufacturer?');
+
+        if (isConfirmed) {
+            // Người dùng đã bấm "OK", tiến hành xóa
+            const response = await fetch(`/api/manufacturerProducts/delete/${manufacturerId}`, { method: 'DELETE' });
+
+            if (response.ok) {
+                alert('Manufacturer deleted successfully');
+                fetchManufacturers(); // Cập nhật danh sách danh mục
+            } else {
+                alert('Failed to delete Manufacturer');
+            }
+        } else {
+            // Người dùng bấm "Cancel", không làm gì cả
+            console.log('Delete action canceled');
+        }
+    }
+</script>
