@@ -1,241 +1,362 @@
-<div class="container mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
+<div class="container mx-auto my-10 p-10 bg-white rounded-xl shadow-lg">
   <!-- Title -->
-  <h1 class="text-3xl font-bold text-purple-600 mb-4">Manage Users</h1>
-  <p class="text-gray-500 mb-6">Manage and organize your users</p>
+  <h1 class="text-4xl font-extrabold text-blue-600 mb-6">Manage Users</h1>
+  <p class="text-lg text-gray-600 mb-8">Easily manage and organize your user list below</p>
 
   <!-- Filters -->
-  <div class="grid grid-cols-2 gap-4 mb-6">
-    <select id="nameFilter" class="ant-select w-full" onchange="applyFilters()">
-      <option value="">Filter by Name</option>
-      <% const uniqueStatuses=[...new Set(users.map(user=> user.name))];
-        uniqueStatuses.forEach(name => { %>
-        <option value="<%= name %>">
-          <%= name %>
-        </option>
-        <% }) %>
-    </select>
-    <select id="emailFilter" class="ant-select w-full" onchange="applyFilters()">
-      <option value="">Filter by Email</option>
-      <% const uniqueStatusess=[...new Set(users.map(user=>
-        user.email))]; uniqueStatusess.forEach(email => { %>
-        <option value="<%= email %>">
-          <%= email %>
-        </option>
-        <% }) %>
-    </select>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div>
+      <select id="usernameFilter"
+        class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-base p-2"
+        onchange="applyFilters()">
+        <option value="">Filter by Username</option>
+        <% const uniqueUsernames=[...new Set(users.map(user=> user.username.trim()))]; %>
+          <% uniqueUsernames.forEach(username=> { %>
+            <option value="<%= username %>">
+              <%= username %>
+            </option>
+            <% }); %>
+      </select>
+    </div>
+
+    <div>
+      <select id="emailFilter"
+        class="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-base p-2"
+        onchange="applyFilters()">
+        <option value="">Filter by Email</option>
+        <% const uniqueEmails=[...new Set(users.map(user=> user.email.trim()))]; %>
+          <% uniqueEmails.forEach(email=> { %>
+            <option value="<%= email %>">
+              <%= email %>
+            </option>
+            <% }); %>
+      </select>
+    </div>
   </div>
 
   <!-- Ant Design Table -->
-  <div class="ant-table-wrapper">
-    <table id="userTable" class="ant-table ant-table-bordered w-full">
+  <div class="overflow-x-auto rounded-lg shadow-lg">
+    <table class="min-w-full bg-white divide-y divide-gray-200">
       <!-- Table Header -->
-      <thead class="ant-table-thead">
+      <thead class="bg-purple-50">
         <tr>
-          <th onclick="sortTable(0)">
-            Name <span class="sort-icon">▲▼</span>
+          <th scope="col"
+            class="px-6 py-3 text-left text-base font-bold text-blue-600 tracking-wider cursor-pointer hover:text-blue-800"
+            onclick="sortTable(0)">
+            Username
           </th>
-          <th onclick="sortTable(1)">
-            Username <span class="sort-icon">▲▼</span>
+          <th scope="col"
+            class="px-6 py-3 text-left text-base font-bold text-blue-600 tracking-wider cursor-pointer hover:text-blue-800"
+            onclick="sortTable(1)">
+            Email
           </th>
-          <th onclick="sortTable(2)">
-            Email <span class="sort-icon">▲▼</span>
+          <th scope="col"
+            class="px-6 py-3 text-left text-base font-bold text-blue-600 tracking-wider cursor-pointer hover:text-blue-800"
+            onclick="sortTime()">
+            Created At
           </th>
-          <th onclick="sortTable(3)">
-            Account Number <span class="sort-icon">▲▼</span>
+          <th scope="col" class="px-6 py-3 text-left text-base font-bold text-blue-600 tracking-wider">
+            Action
           </th>
-          <th onclick="sortTable(4)">
-            Balance <span class="sort-icon">▲▼</span>
+          <th scope="col" class="px-6 py-3 text-left text-base font-bold text-blue-600 tracking-wider">
+            Ban/Unban
           </th>
-          <th onclick="sortTable(5)">
-            Branch <span class="sort-icon">▲▼</span>
-          </th>
-          <th onclick="sortTable(6)">
-            Swift Code <span class="sort-icon">▲▼</span>
-          </th>
-          <th onclick="sortTime()">
-            Created At <span class="sort-icon">▲▼</span>
-          </th>
-          <th>Status<span class="sort-icon"></span></th>
         </tr>
       </thead>
 
       <!-- Table Body -->
-      <tbody id="userTableBody" class="ant-table-tbody">
+      <tbody id="userTableBody" class="divide-y divide-gray-200">
         <% users.forEach(user=> { %>
-          <tr>
-            <td class="border px-4 py-2">
-              <%= user.name %>
+          <tr class="hover:bg-purple-50">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-800">
+              <%= user.username %>
             </td>
-            <td class="border px-4 py-2">
-              <a href="/user-profile?username=<%= user.username %>" style="text-decoration: underline; color: blue">
-                <%= user.username %>
-              </a>
-            </td>
-            <td class="border px-4 py-2">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">
               <%= user.email %>
             </td>
-            <td class="border px-4 py-2">
-              <%= user.account %>
-            </td>
-            <td class="border px-4 py-2">
-              <%= user.balance %>
-            </td>
-            <td class="border px-4 py-2">
-              <%= user.branch %>
-            </td>
-            <td class="border px-4 py-2">
-              <%= user.swift %>
-            </td>
-            <td class="border px-4 py-2" data-created-at="<%= user.createdAt %>">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-500" data-created-at="<%= user.createdAt %>">
               <%= new Date(user.createdAt).toLocaleDateString('en-GB') %>
             </td>
-            <td>
-              <%= user.isBanned ? "Banned" : "Active" %>
+            <td class="px-6 py-4 whitespace-nowrap text-base text-blue-600">
+              <a href="/accounts/<%= user._id %>" class="text-blue-500 hover:underline">
+                View
+              </a>
             </td>
-            <td>
-              <% if (user.username===currentUser) { %>
-                <button disabled class="ant-btn ant-btn-danger">Ban</button>
+            <td class="px-6 py-4 whitespace-nowrap text-base text-center">
+              <% if (user.isBanned) { %>
+                <button onclick="toggleBan('<%= user._id %>', false)"
+                  class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                  Unban
+                </button>
                 <% } else { %>
-                  <form method="POST" action="/accounts/ban">
-                    <input type="hidden" name="username" value="<%= user.username %>" />
-                    <button type="submit" class="ant-btn <%= user.isBanned ? 'ant-btn-primary' : 'ant-btn-danger' %>">
-                      <%= user.isBanned ? "Unban" : "Ban" %>
-                    </button>
-                  </form>
+                  <button onclick="toggleBan('<%= user._id %>', true)"
+                    class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    Ban
+                  </button>
                   <% } %>
             </td>
           </tr>
-          <% }) %>
+          <% }); %>
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination -->
+  <div id="pagination" class="flex justify-center mt-6">
+    <% if (currentPage> 1) { %>
+      <button class="mx-1 px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-100"
+        onclick="fetchPage('<%= currentPage - 1 %>')">
+        Previous
+      </button>
+      <% } %>
+
+        <% for (let i=1; i <=totalPages; i++) { %>
+          <button class="mx-1 px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-100" onclick="fetchPage('<%= i %>')"
+            <% if (i===currentPage) { %> style="background-color: #e5e7eb;" <% } %>>
+              <%= i %>
+          </button>
+          <% } %>
+
+            <% if (currentPage < totalPages) { %>
+              <button class="mx-1 px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-100"
+                onclick="fetchPage('<%= currentPage + 1 %>')">
+                Next
+              </button>
+              <% } %>
+  </div>
+
 </div>
 
 <script>
-  let sortOrder = {}; // Store sort order for each column
-  function sortTime() {
-    const tableBody = document.getElementById("userTableBody");
-    const rows = Array.from(tableBody.querySelectorAll("tr"));
+  let sortOrder = {};
 
-    const columnIndex = 7;
-    sortOrder[columnIndex] = !sortOrder[columnIndex];
+    // Function to sort the "Created At" column
+    function sortTime() {
+      const tableBody = document.getElementById("userTableBody");
+      const rows = Array.from(tableBody.querySelectorAll("tr"));
+      const columnIndex = 2; // "Created At" column index
+      sortOrder[columnIndex] = !sortOrder[columnIndex];
 
-    rows.sort((a, b) => {
-      const aDate = new Date(a.children[columnIndex].dataset.createdAt);
-      const bDate = new Date(b.children[columnIndex].dataset.createdAt);
-      return sortOrder[columnIndex] ? aDate - bDate : bDate - aDate;
-    });
+      rows.sort((a, b) => {
+        const aDate = new Date(a.children[columnIndex].dataset.createdAt);
+        const bDate = new Date(b.children[columnIndex].dataset.createdAt);
+        return sortOrder[columnIndex] ? aDate - bDate : bDate - aDate;
+      });
 
-    rows.forEach((row) => tableBody.appendChild(row));
+      rows.forEach(row => tableBody.appendChild(row));
+      updateURL("sort", "createdat");
+      updateURL("order", sortOrder[columnIndex] ? "asc" : "desc");
+    }
 
-    // Update the URL with sorting parameters
-    const url = new URL(window.location.href);
-    const sortDirection = sortOrder[columnIndex] ? "asc" : "desc";
+    // Function to sort the table by Username or Email
+    function sortTable(columnIndex) {
+      const tableBody = document.getElementById("userTableBody");
+      const rows = Array.from(tableBody.querySelectorAll("tr"));
+      sortOrder[columnIndex] = !sortOrder[columnIndex];
 
-    url.searchParams.set("sort", "createat");
-    url.searchParams.set("order", sortDirection);
+      rows.sort((a, b) => {
+        const aText = a.children[columnIndex].textContent.trim();
+        const bText = b.children[columnIndex].textContent.trim();
+        return sortOrder[columnIndex] ? aText.localeCompare(bText) : bText.localeCompare(aText);
+      });
 
-    window.history.replaceState({}, "", url);
-  }
-  function sortTable(columnIndex) {
-    const tableBody = document.getElementById("userTableBody");
-    const rows = Array.from(tableBody.querySelectorAll("tr"));
+      rows.forEach(row => tableBody.appendChild(row));
+      const sortColumn = columnIndex === 0 ? "username" : "email";
+      updateURL("sort", sortColumn);
+      updateURL("order", sortOrder[columnIndex] ? "asc" : "desc");
+    }
 
-    // Toggle sort order
-    sortOrder[columnIndex] = !sortOrder[columnIndex];
+    // Function to apply filters
+    function applyFilters() {
+        const usernameFilterValue = document.getElementById("usernameFilter").value.trim();
+        const emailFilterValue = document.getElementById("emailFilter").value.trim();
+        const rows = document.querySelectorAll("#userTableBody tr");
 
-    rows.sort((a, b) => {
-      const aText = a.children[columnIndex].textContent.trim();
-      const bText = b.children[columnIndex].textContent.trim();
+        rows.forEach(row => {
+          const usernameCell = row.children[0].textContent.trim();
+          const emailCell = row.children[1].textContent.trim();
 
-      if (!isNaN(aText) && !isNaN(bText)) {
-        // Compare numeric values
-        return sortOrder[columnIndex] ? aText - bText : bText - aText;
+          const usernameMatches = !usernameFilterValue || usernameCell.toLowerCase() === usernameFilterValue.toLowerCase();
+          const emailMatches = !emailFilterValue || emailCell.toLowerCase() === emailFilterValue.toLowerCase();
+
+          row.style.display = usernameMatches && emailMatches ? "" : "none";
+        });
+
+        // Update the URL with the new filters
+        if (usernameFilterValue || emailFilterValue) {
+          updateURL("filter", "true");
+        } else {
+          updateURL("filter", null);
+        }
+
+        // Removed the recursive call
+        updateURL("username", usernameFilterValue);
+        updateURL("email", emailFilterValue);
       }
 
-      // Compare string values
-      return sortOrder[columnIndex]
-        ? aText.localeCompare(bText)
-        : bText.localeCompare(aText);
-    });
+    // Initialize filters and sorting based on URL parameters
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
 
-    // Re-append sorted rows to the table body
-    rows.forEach((row) => tableBody.appendChild(row));
+        // Lấy giá trị từ URL
+        const usernameFilterValue = urlParams.get("username");
+        const emailFilterValue = urlParams.get("email");
+        const sortColumn = urlParams.get("sort");
+        const sortDirection = urlParams.get("order");
+        const currentPage = urlParams.get("page") || 1;
 
-    // Update URL with sorting parameters
-    const url = new URL(window.location.href);
-    const sortColumn = tableBody.parentElement
-      .querySelectorAll("thead th")
-    [columnIndex].textContent.trim()
-      .slice(0, -3);
-    const sortDirection = sortOrder[columnIndex] ? "asc" : "desc";
+        // Áp dụng giá trị cho các bộ lọc
+        if (usernameFilterValue) {
+          document.getElementById("usernameFilter").value = usernameFilterValue;
+        }
+        if (emailFilterValue) {
+          document.getElementById("emailFilter").value = emailFilterValue;
+        }
 
-    url.searchParams.set("sort", sortColumn.toLowerCase());
-    url.searchParams.set("order", sortDirection);
+        // Áp dụng bộ lọc
+        applyFilters();
 
-    window.history.replaceState({}, "", url);
-  }
+        // Áp dụng sắp xếp nếu có
+        if (sortColumn && sortDirection) {
+          const columnIndex = sortColumn === "username" ? 0 : sortColumn === "email" ? 1 : 2;
+          sortOrder[columnIndex] = sortDirection === "asc";
+          if (columnIndex === 2) sortTime();
+          else sortTable(columnIndex);
+        }
 
-  function applyFilters() {
-    const nameFilterValue = document.getElementById("nameFilter").value;
-    const emailFilterValue = document.getElementById("emailFilter").value;
-    const rows = document.querySelectorAll("#userTableBody tr");
+        // Tải trang hiện tại
+        fetchPage(currentPage);
+      });
 
-    rows.forEach((row) => {
-      const nameCell = row.children[0].textContent; // Name column
-      const emailCell = row.children[2].textContent; // Email column
+      function updateURL(param, value) {
+          const url = new URL(window.location.href);
 
-      const nameMatches = !nameFilterValue || nameCell === nameFilterValue;
-      const emailMatches =
-        !emailFilterValue || emailCell === emailFilterValue;
+          // Cập nhật hoặc xóa tham số
+          if (value) {
+            url.searchParams.set(param, value);
+          } else {
+            url.searchParams.delete(param);
+          }
+          // Truyền URL mới vào window.location
+          window.history.replaceState({}, "", url);
+        }
 
-      // Display row only if all conditions are met
-      row.style.display = nameMatches && emailMatches ? "" : "none";
-    });
+      // Hàm fetchPage đã sửa để cập nhật URL:
+      async function fetchPage(page) {
+        const usernameFilter = document.getElementById("usernameFilter").value.trim();
+        const emailFilter = document.getElementById("emailFilter").value.trim();
 
-    // Update the URL with query parameters
-    const url = new URL(window.location.href);
-    if (nameFilterValue) {
-      url.searchParams.set("name", nameFilterValue);
-    } else {
-      url.searchParams.delete("name");
+        const params = new URLSearchParams(window.location.search);
+        params.set("page", page);
+        if (usernameFilter) params.set("username", usernameFilter);
+        if (emailFilter) params.set("email", emailFilter);
+
+        try {
+          const response = await fetch(`/api/accounts?${params.toString()}`);
+          const data = await response.json();
+
+          if (response.ok) {
+            updateTable(data.users);
+            updatePagination(data.currentPage, data.totalPages);
+            updateURL("page", page);
+          } else {
+            console.error("Failed to fetch users:", data.message);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+  function updateTable(users) {
+      const tbody = document.getElementById("userTableBody");
+      tbody.innerHTML = ""; // Xóa dữ liệu cũ
+
+      users.forEach(user => {
+        const banButton = user.isBanned
+          ? `<button onclick="toggleBan('${user._id}', false)"
+           class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+           Unban
+         </button>`
+          : `<button onclick="toggleBan('${user._id}', true)"
+           class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+           Ban
+         </button>`;
+
+        const row = `
+      <tr class="hover:bg-purple-50">
+        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-800">${user.username}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-600">${user.email}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-base text-gray-500" data-created-at="${user.createdAt}">
+          ${new Date(user.createdAt).toLocaleDateString('en-GB')}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-base text-blue-600">
+          <a href="/accounts/${user._id}" class="text-blue-500 hover:underline">View</a>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-base text-center">
+          ${banButton}
+        </td>
+      </tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
     }
-    if (emailFilterValue) {
-      url.searchParams.set("email", emailFilterValue);
-    } else {
-      url.searchParams.delete("email");
-    }
-    window.history.replaceState({}, "", url);
-  }
 
-  // Populate filters and sort state on page load based on URL parameters
-  document.addEventListener("DOMContentLoaded", () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const nameFilterValue = urlParams.get("name");
-    const emailFilterValue = urlParams.get("email");
-    const sortColumn = urlParams.get("sort");
-    const sortDirection = urlParams.get("order");
 
-    if (nameFilterValue) {
-      document.getElementById("nameFilter").value = nameFilterValue;
-    }
-    if (emailFilterValue) {
-      document.getElementById("emailFilter").value = emailFilterValue;
-    }
+   function updatePagination(currentPage, totalPages) {
+      const paginationDiv = document.getElementById("pagination");
+      paginationDiv.innerHTML = ""; // Xóa pagination cũ
 
-    applyFilters();
+      // Nút Previous
+      if (currentPage > 1) {
+        const prevButton = `
+        <button
+          class="mx-1 px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-100"
+          onclick="fetchPage(${currentPage - 1})">
+          Previous
+        </button>`;
+        paginationDiv.insertAdjacentHTML("beforeend", prevButton);
+      }
 
-    if (sortColumn && sortDirection) {
-      const columnIndex = Array.from(
-        document.querySelectorAll("thead th")
-      ).findIndex(
-        (th) => th.textContent.trim().toLowerCase() === sortColumn
-      );
+      // Các nút số trang
+      for (let i = 1; i <= totalPages; i++) {
+        const button = `
+        <button
+          class="mx-1 px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-100"
+          onclick="fetchPage(${i})"
+          ${i === currentPage ? 'style="background-color: #e5e7eb;"' : ""}>
+          ${i}
+        </button>`;
+        paginationDiv.insertAdjacentHTML("beforeend", button);
+      }
 
-      if (columnIndex >= 0) {
-        sortOrder[columnIndex] = sortDirection === "asc";
-        sortTable(columnIndex);
+      // Nút Next
+      if (currentPage < totalPages) {
+        const nextButton = `
+        <button
+          class="mx-1 px-4 py-2 border rounded-lg text-blue-600 hover:bg-blue-100"
+          onclick="fetchPage(${currentPage + 1})">
+          Next
+        </button>`;
+        paginationDiv.insertAdjacentHTML("beforeend", nextButton);
       }
     }
-  });
+
+    function toggleBan(userId, shouldBan) {
+        fetch(`/api/accounts/${userId}/ban`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ isBanned: shouldBan }),
+        })
+          .then(response => {
+            if (response.ok) {
+              alert(shouldBan ? 'User banned successfully' : 'User unbanned successfully');
+              location.reload(); // Refresh the page to reflect the updated status
+            } else {
+              alert('Failed to update user status');
+            }
+          })
+          .catch(error => console.error('Error:', error));
+      }
+
 </script>
