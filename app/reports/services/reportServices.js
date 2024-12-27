@@ -11,12 +11,17 @@ const getWeekNumber = (date) => {
   return Math.floor(diff / oneWeek) + 1;
 };
 
+const getQuarter = (month) => {
+  if (month >= 0 && month <= 2) return 'Q1';
+  if (month >= 3 && month <= 5) return 'Q2';
+  if (month >= 6 && month <= 8) return 'Q3';
+  if (month >= 9 && month <= 11) return 'Q4';
+};
+
 exports.generateRevenueReport = async (timeRange, startDate, endDate) => {
   try {
-    // Fetch all orders
     const orders = await orderService.getAllOrders();
 
-    // Filter by date range
     let filteredOrders = [...orders];
     if (startDate && endDate) {
       filteredOrders = filteredOrders.filter((order) => {
@@ -27,20 +32,22 @@ exports.generateRevenueReport = async (timeRange, startDate, endDate) => {
       });
     }
 
-    // Aggregate data based on time range
-    let aggregatedData;
+    let aggregatedData = [];
     if (timeRange === 'day') {
-      // Group by day
-      aggregatedData = filteredOrders.map((order) => ({
-        date: order.orderDate.toISOString().split('T')[0], // Format date as YYYY-MM-DD
-        totalOrders: 1,
-        revenue: order.items.reduce(
+      const dayMap = {};
+      filteredOrders.forEach((order) => {
+        const date = order.orderDate.toISOString().split('T')[0];
+        if (!dayMap[date]) {
+          dayMap[date] = { date, totalOrders: 0, revenue: 0 };
+        }
+        dayMap[date].totalOrders += 1;
+        dayMap[date].revenue += order.items.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0
-        ),
-      }));
+        );
+      });
+      aggregatedData = Object.values(dayMap);
     } else if (timeRange === 'week') {
-      // Group by week
       const weekMap = {};
       filteredOrders.forEach((order) => {
         const weekNumber = `Week ${getWeekNumber(new Date(order.orderDate))}`;
@@ -59,7 +66,6 @@ exports.generateRevenueReport = async (timeRange, startDate, endDate) => {
       });
       aggregatedData = Object.values(weekMap);
     } else if (timeRange === 'month') {
-      // Group by month
       const monthMap = {};
       filteredOrders.forEach((order) => {
         const month = new Date(order.orderDate).toLocaleString('en-US', {
@@ -67,11 +73,7 @@ exports.generateRevenueReport = async (timeRange, startDate, endDate) => {
           year: 'numeric',
         });
         if (!monthMap[month]) {
-          monthMap[month] = {
-            date: month,
-            totalOrders: 0,
-            revenue: 0,
-          };
+          monthMap[month] = { date: month, totalOrders: 0, revenue: 0 };
         }
         monthMap[month].totalOrders += 1;
         monthMap[month].revenue += order.items.reduce(
@@ -80,16 +82,41 @@ exports.generateRevenueReport = async (timeRange, startDate, endDate) => {
         );
       });
       aggregatedData = Object.values(monthMap);
-    } else {
-      // Default: Group by day
-      aggregatedData = filteredOrders.map((order) => ({
-        date: order.orderDate.toISOString().split('T')[0],
-        totalOrders: 1,
-        revenue: order.items.reduce(
+    } else if (timeRange === 'year') {
+      const yearMap = {};
+      filteredOrders.forEach((order) => {
+        const year = new Date(order.orderDate).getFullYear();
+        if (!yearMap[year]) {
+          yearMap[year] = { date: year, totalOrders: 0, revenue: 0 };
+        }
+        yearMap[year].totalOrders += 1;
+        yearMap[year].revenue += order.items.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0
-        ),
-      }));
+        );
+      });
+      aggregatedData = Object.values(yearMap);
+    } else if (timeRange === 'quarter') {
+      const quarterMap = {};
+      filteredOrders.forEach((order) => {
+        const month = new Date(order.orderDate).getMonth();
+        const year = new Date(order.orderDate).getFullYear();
+        const quarter = getQuarter(month);
+        const quarterLabel = `${quarter} ${year}`;
+        if (!quarterMap[quarterLabel]) {
+          quarterMap[quarterLabel] = {
+            date: quarterLabel,
+            totalOrders: 0,
+            revenue: 0,
+          };
+        }
+        quarterMap[quarterLabel].totalOrders += 1;
+        quarterMap[quarterLabel].revenue += order.items.reduce(
+          (sum, item) => sum + item.price * item.quantity,
+          0
+        );
+      });
+      aggregatedData = Object.values(quarterMap);
     }
 
     return aggregatedData;
@@ -108,39 +135,40 @@ exports.fetchTopRevenueProducts = async (
   try {
     const matchStage = {};
 
-    // Process timeRange
+    // Xử lý timeRange
     if (timeRange) {
       const now = new Date();
       if (timeRange === 'day') {
+        // Xử lý ngày hiện tại
         startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0); // Start of day
+        startDate.setHours(0, 0, 0, 0); // Bắt đầu ngày
         endDate = new Date(now);
-        endDate.setHours(23, 59, 59, 999); // End of day
+        endDate.setHours(23, 59, 59, 999); // Kết thúc ngày
       } else if (timeRange === 'week') {
+        // Xử lý tuần hiện tại
         const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Bắt đầu tuần (Chủ nhật)
         startDate = new Date(startOfWeek);
         startDate.setHours(0, 0, 0, 0);
         endDate = new Date(now);
         endDate.setHours(23, 59, 59, 999);
       } else if (timeRange === 'month') {
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1); // Start of month
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // End of month
+        // Xử lý tháng hiện tại
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1); // Bắt đầu tháng
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Kết thúc tháng
         endDate.setHours(23, 59, 59, 999);
       }
     }
 
-    // Add date range to match stage
+    // Thêm phạm vi thời gian vào match stage
     if (startDate && endDate) {
       matchStage.orderDate = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $gte: new Date(startDate), // Lọc từ startDate
+        $lte: new Date(endDate), // Lọc đến endDate
       };
     }
 
-    console.log('matchStage:', matchStage);
-
-    // Perform aggregation
+    // Thực hiện phép tổng hợp (aggregation)
     const results = await Order.aggregate([
       { $match: matchStage },
       { $unwind: '$items' },

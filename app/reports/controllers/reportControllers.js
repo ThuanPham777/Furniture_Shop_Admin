@@ -29,7 +29,7 @@ exports.getTopRevenueProducts = async (req, res) => {
       limit
     );
 
-    //console.log('revenueReport: ' + JSON.stringify(revenueReport, null, 2));
+    console.log('revenueReport: ' + JSON.stringify(revenueReport, null, 2));
 
     res.status(200).json(revenueReport);
   } catch (error) {

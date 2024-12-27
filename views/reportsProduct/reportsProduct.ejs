@@ -68,18 +68,20 @@
       const startDate = document.getElementById("startDate").value;
       const endDate = document.getElementById("endDate").value;
 
-      // Update URL with query parameters
-      const params = new URLSearchParams({
-        timeRange,
-        startDate,
-        endDate,
-      });
+      // Initialize params
+      const params = new URLSearchParams();
+
+      // Add only fields with values
+      if (timeRange) params.append("timeRange", timeRange);
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
 
       // Use History API to change URL
-      history.replaceState(null, "", `?${params.toString()}`);
+      const queryString = params.toString();
+      history.replaceState(null, "", queryString ? `?${queryString}` : window.location.pathname);
 
       // Fetch data from server
-      fetch(`/reports/getTopRevenueProducts?${params.toString()}`)
+      fetch(`/reports/getTopRevenueProducts?${queryString}`)
         .then((response) => {
           if (!response.ok) {
             throw new Error("Failed to fetch product report");
@@ -90,22 +92,21 @@
           const tableBody = document.getElementById("tableBody");
           tableBody.innerHTML = "";
 
-          console.log("data: " + JSON.stringify(data, null, 2));
           if (data.length > 0) {
             data.forEach((item) => {
               const row = document.createElement("div");
               row.className = "grid grid-cols-7 py-4 px-4 hover:bg-gray-50";
               row.innerHTML = `
-                <div>
-                  <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-md">
-                </div>
-                <div>${item.name || "N/A"}</div>
-                <div>$${(item.price || 0).toFixed(2)}</div>
-                <div>${item.category || "N/A"}</div>
-                <div>${item.manufacturer || "N/A"}</div>
-                <div>$${(item.totalRevenue || 0).toFixed(2)}</div>
-                <div>${item.totalQuantity || 0}</div>
-              `;
+            <div>
+              <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-md">
+            </div>
+            <div>${item.name || "N/A"}</div>
+            <div>$${(item.price || 0).toFixed(2)}</div>
+            <div>${item.category || "N/A"}</div>
+            <div>${item.manufacturer || "N/A"}</div>
+            <div>$${(item.totalRevenue || 0).toFixed(2)}</div>
+            <div>${item.totalQuantity || 0}</div>
+          `;
               tableBody.appendChild(row);
             });
           } else {

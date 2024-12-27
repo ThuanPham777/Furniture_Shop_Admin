@@ -17,7 +17,11 @@ exports.getOrderById = async (orderId) => {
   }
 };
 
-exports.getAllOrders = async (filters = {}, page, limit) => {
+exports.getAllOrdersWithFilters = async (
+  filters = {},
+  page = 1,
+  limit = 10
+) => {
   try {
     const filterConditions = {};
 
@@ -51,6 +55,19 @@ exports.getAllOrders = async (filters = {}, page, limit) => {
   } catch (error) {
     console.error('Error fetching orders:', error.message);
     throw new Error('Could not fetch orders');
+  }
+};
+
+exports.getAllOrders = async () => {
+  try {
+    const orders = await Order.find({})
+      .populate('userId', 'firstName lastName email')
+      .populate('items.productId')
+      .lean();
+    return orders;
+  } catch (error) {
+    console.error('Error fetching all orders:', error.message);
+    throw new Error('Could not fetch all orders');
   }
 };
 

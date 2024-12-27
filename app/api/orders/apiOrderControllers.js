@@ -7,7 +7,7 @@ exports.getAllOrderAPI = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 4;
     // Gọi trực tiếp service để lấy tất cả các đơn hàng
-    const { orders, totalPages } = await orderService.getAllOrders(
+    const { orders, totalPages } = await orderService.getAllOrdersWithFilters(
       filters,
       page,
       limit
