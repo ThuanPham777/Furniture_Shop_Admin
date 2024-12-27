@@ -182,6 +182,8 @@
     function applyFilters(statusFilter) {
         let filters = {}
         if (statusFilter) filters.status = statusFilter; // Add status filter if selected
+        console.log("statusFilter", statusFilter);
+
 
         const timeOrder = document.getElementById('timeOrder').value;
         if(timeOrder){
@@ -356,6 +358,8 @@
         const url = new URL(window.location.href);
 
         url.searchParams.delete('page');
+        url.searchParams.delete('timeOrder');
+        url.searchParams.delete('status');
 
         Object.keys(filters).forEach(key => url.searchParams.set(key, filters[key]));
         window.history.pushState({}, '', url);
