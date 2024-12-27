@@ -17,14 +17,39 @@ exports.getOrderById = async (orderId) => {
   }
 };
 
-exports.getAllOrders = async () => {
+exports.getAllOrders = async (filters = {}, page, limit) => {
   try {
-    const orders = await Order.find({})
-      .populate('userId', 'firstName lastName email') // Chỉ lấy thông tin cần thiết từ User
-      .populate('items.productId');
-    return orders;
+    const filterConditions = {};
+
+    if (filters.status) {
+      filterConditions.status = filters.status;
+    }
+
+    let sortQuery = {};
+
+    if (filters.timeOrder === 'asc') {
+      sortQuery = { orderDate: 1 };
+    }
+    if (filters.timeOrder === 'desc') {
+      sortQuery = { orderDate: -1 };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const orders = await Order.find(filterConditions)
+      .populate('userId', 'firstName lastName email')
+      .populate('items.productId')
+      .skip(skip)
+      .limit(limit)
+      .sort(sortQuery)
+      .lean();
+
+    const totalOrders = await Order.countDocuments(filterConditions);
+    const totalPages = Math.ceil(totalOrders / limit);
+
+    return { orders, totalPages };
   } catch (error) {
-    console.error('Error fetching orders:', error);
+    console.error('Error fetching orders:', error.message);
     throw new Error('Could not fetch orders');
   }
 };

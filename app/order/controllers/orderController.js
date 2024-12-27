@@ -3,11 +3,21 @@ const orderService = require('../services/orderService');
 
 exports.getAllOrders = async (req, res) => {
   try {
+    const filters = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 4;
     // Gọi trực tiếp service để lấy tất cả các đơn hàng
-    const orders = await orderService.getAllOrders();
+    const { orders, totalPages } = await orderService.getAllOrders(
+      filters,
+      page,
+      limit
+    );
     // Render trang quản lý đơn hàng với dữ liệu đơn hàng
     res.render('order/order-list', {
+      filters,
       orders,
+      totalPages,
+      currentPage: page,
     });
   } catch (error) {
     console.error(error);

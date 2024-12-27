@@ -6,18 +6,22 @@
         <!-- Filters -->
         <div class="grid grid-cols-2 gap-4 mb-6">
             <!-- Filter by Status -->
-            <select id="statusFilter" class="w-full p-2 border border-gray-300 rounded-md" onchange="applyFilters()">
-                <option value="">Filter by Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Delivered">Delivered</option>
+            <select id="statusFilter" class="w-full p-2 border border-gray-300 rounded-md"
+                onchange="applyFilters(this.value)">
+                <option value="" <%=!filters?.status ? 'selected' : '' %>>Filter by Status</option>
+                <option value="Pending" <%=filters?.status==='Pending' ? 'selected' : '' %>>Pending</option>
+                <option value="Processing" <%=filters?.status==='Processing' ? 'selected' : '' %>>Processing</option>
+                <option value="Shipped" <%=filters?.status==='Shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="Delivered" <%=filters?.status==='Delivered' ? 'selected' : '' %>>Delivered</option>
             </select>
 
             <!-- Order by Time -->
-            <select id="timeOrder" class="w-full p-2 border border-gray-300 rounded-md" onchange="applySorting()">
-                <option value="desc">Order by Time: Newest First</option>
-                <option value="asc">Order by Time: Oldest First</option>
+            <select id="timeOrder" class="w-full p-2 border border-gray-300 rounded-md" onchange="applySorting(this.value)">
+                <option value="" <%=!filters?.timeOrder ? 'selected' : '' %>>Sorting by Time</option>
+                <option value="desc" <%=filters?.timeOrder==='desc' ? 'selected' : '' %>>Order by Time: Newest First
+                </option>
+                <option value="asc" <%=filters?.timeOrder==='asc' ? 'selected' : '' %>>Order by Time: Oldest First
+                </option>
             </select>
         </div>
 
@@ -113,101 +117,249 @@
                 </tbody>
             </table>
         </div>
+        <!-- Pagination -->
+        <!-- Pagination Section -->
+        <div id="pagination" class="pagination mt-8 flex justify-center items-center gap-2">
+            <!-- Previous Button -->
+            <a onclick="fetchOrder()"
+                class="<%= currentPage === 1 ? 'px-4 py-2 text-gray-400 cursor-not-allowed' : 'px-4 py-2 border rounded hover:bg-blue-100' %>">
+                Previous
+            </a>
+
+            <!-- Page Numbers -->
+            <% for (let i=1; i <=totalPages; i++) { %>
+                <a onclick="fetchOrder()"
+                    class="<%= currentPage === i ? 'bg-blue-600 text-white px-4 py-2 rounded' : 'px-3 py-1 border rounded hover:bg-blue-100' %>">
+                    <%= i %>
+                </a>
+                <% } %>
+
+                    <!-- Next Button -->
+                    <a onclick="fetchOrder()"
+                        class="<%= currentPage === totalPages ? 'px-4 py-2 text-gray-400 cursor-not-allowed' : 'px-4 py-2 border rounded hover:bg-blue-100' %>">
+                        Next
+                    </a>
+        </div>
     </div>
 </div>
-    <script>
-        function updateStatus(orderId, newStatus) {
-                fetch('/api/orders/updateOrderStatus', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId: orderId, status: newStatus }),
-                })
-                    .then(response => {
-                        if (!response.ok) throw new Error('Failed to update status');
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Find the row for the updated order using the id
-                        const row = document.querySelector(`#order-${orderId}`);
-                        if (row) {
-                            // Update the status in the dropdown
-                            const statusSelect = row.querySelector('.status-select');
-                            if (statusSelect) {
-                                statusSelect.value = newStatus; // Update the dropdown value
-                            }
+</div>
+<script>
+    const paginationContainer = document.getElementById('pagination');
 
-                            // Optionally, show a success message on the row or in a global alert
-                            alert(`Order status updated to: ${data.updatedStatus}`);
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        alert('Error updating order status');
-                    });
+
+    function updateStatus(orderId, newStatus) {
+        fetch('/api/orders/updateOrderStatus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: orderId, status: newStatus }),
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to update status');
+                return response.json();
+            })
+            .then(data => {
+                // Find the row for the updated order using the id
+                const row = document.querySelector(`#order-${orderId}`);
+                if (row) {
+                    // Update the status in the dropdown
+                    const statusSelect = row.querySelector('.status-select');
+                    if (statusSelect) {
+                        statusSelect.value = newStatus; // Update the dropdown value
+                    }
+
+                    // Optionally, show a success message on the row or in a global alert
+                    alert(`Order status updated to: ${data.updatedStatus}`);
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Error updating order status');
+            });
+    }
+
+
+
+    function applyFilters(statusFilter) {
+        let filters = {}
+        if (statusFilter) filters.status = statusFilter; // Add status filter if selected
+
+        const timeOrder = document.getElementById('timeOrder').value;
+        if(timeOrder){
+            filters = { ...filters, timeOrder: timeOrder }
+        }
+        updateURL(filters);
+        fetchOrder(filters); // Pass filters to fetchOrder
+    }
+
+
+    function applySorting(timeOrder) {
+        let filters = {};
+        if (timeOrder) filters.timeOrder = timeOrder; // Add timeOrder filter if selected
+        const statusFilter = document.getElementById('statusFilter').value;
+        if(statusFilter){
+            filters = { ...filters, status: statusFilter }
+        }
+        updateURL(filters);
+        fetchOrder(filters);
+    }
+
+
+    function hasFilters(filters) {
+        return Object.values(filters).some(value => {
+            if (Array.isArray(value)) {
+                return value.length > 0;
             }
+            return value !== undefined && value !== '';
+        });
+    }
+
+    const fetchOrder = async (filters = {}) => {
+        if (!hasFilters(filters)) filters = {}; // If no filters, use default
+
+        const url = new URL('/api/orders', window.location.origin);
+        Object.keys(filters).forEach(key => url.searchParams.append(key, filters[key]));
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            // Render pagination and table with the fetched data
+            renderPagination(data.currentPage, data.totalPages, filters);
+            updateTable(data.orders);
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+        }
+    };
 
 
-        function applyFilters() {
-            const statusFilterValue = document.getElementById('statusFilter').value;
-            const rows = document.querySelectorAll('#userTableBody tr');
+    // update pagination
 
-            rows.forEach(row => {
-                const statusCell = row.querySelector('select').value;
-                const statusMatches = !statusFilterValue || statusCell === statusFilterValue;
-                row.style.display = statusMatches ? '' : 'none';
+    function renderPagination(currentPage, totalPages, filters) {
+        paginationContainer.innerHTML = '';
+
+        // Add Previous Button
+        const prevButton = document.createElement('a');
+        prevButton.href = '#';
+        prevButton.textContent = 'Previous';
+        prevButton.className = currentPage === 1
+            ? 'px-4 py-2 text-gray-400 cursor-not-allowed'
+            : 'px-4 py-2 border rounded hover:bg-blue-100';
+
+        prevButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage > 1) {
+                const newFilters = { ...filters, page: currentPage - 1 };
+                updateURL(newFilters);
+                fetchOrder(newFilters);
+            }
+        });
+
+        paginationContainer.appendChild(prevButton);
+
+        // Add page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const pageLink = document.createElement('a');
+            pageLink.href = '#';
+            pageLink.textContent = i;
+            pageLink.className = currentPage === i
+                ? 'bg-blue-600 text-white px-4 py-2 rounded'
+                : 'px-3 py-1 border rounded hover:bg-blue-100';
+
+            pageLink.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent default link behavior
+                const newFilters = { ...filters, page: i };
+                updateURL(newFilters);
+                fetchOrder(newFilters);
             });
 
-            const url = new URL(window.location.href);
-            if (statusFilterValue) {
-                url.searchParams.set('status', statusFilterValue);
-            } else {
-                url.searchParams.delete('status');
-            }
-            window.history.replaceState({}, '', url);
+            paginationContainer.appendChild(pageLink);
         }
 
-        function applySorting() {
-                const sortOrder = document.getElementById('timeOrder').value;
-                const tableBody = document.getElementById('userTableBody');
-                const rows = Array.from(tableBody.querySelectorAll('tr'));
+        // Add Next Button
+        const nextButton = document.createElement('a');
+        nextButton.href = '#';
+        nextButton.textContent = 'Next';
+        nextButton.className = currentPage === totalPages
+            ? 'px-4 py-2 text-gray-400 cursor-not-allowed'
+            : 'px-4 py-2 border rounded hover:bg-blue-100';
 
-                // Sắp xếp dựa trên Order Date
-                rows.sort((a, b) => {
-                    const dateA = new Date(
-                        a.querySelectorAll('td')[6].innerText.trim().split('/').reverse().join('-')
-                    );
-                    const dateB = new Date(
-                        b.querySelectorAll('td')[6].innerText.trim().split('/').reverse().join('-')
-                    );
-                    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-                });
-
-                // Gắn lại các hàng vào bảng sau khi sắp xếp
-                rows.forEach(row => tableBody.appendChild(row));
-
-                // Cập nhật URL với tham số "order"
-                const url = new URL(window.location.href);
-                url.searchParams.set('order', sortOrder);
-                window.history.replaceState({}, '', url);
+        nextButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                const newFilters = { ...filters, page: currentPage + 1 };
+                updateURL(newFilters);
+                fetchOrder(newFilters);
             }
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-
-            // Apply status filter
-            const statusFilterValue = urlParams.get('status');
-            if (statusFilterValue) {
-                document.getElementById('statusFilter').value = statusFilterValue;
-            }
-
-            applyFilters();
-
-            // Apply time order
-            const timeOrderValue = urlParams.get('order');
-            if (timeOrderValue) {
-                document.getElementById('timeOrder').value = timeOrderValue;
-            }
-
-            applySorting();
         });
-    </script>
+
+        paginationContainer.appendChild(nextButton);
+    }
+
+
+    // update table
+    function updateTable(orders) {
+        const tableBody = document.getElementById("userTableBody");
+        tableBody.innerHTML = ""; // Clear existing rows
+
+        orders.forEach(order => {
+            const orderRow = `
+            <tr class="bg-white hover:bg-gray-50" id="order-${order._id}">
+                <td class="px-4 py-2 border">
+                    ${order.address.firstName} ${order.address.lastName}
+                </td>
+                <td class="px-4 py-2 border">${order.address.phoneNumber}</td>
+                <td class="px-4 py-2 border">
+                    ${order.address.address}, ${order.address.city}, ${order.address.province},
+                    ${order.address.country} - ${order.address.zipCode}
+                </td>
+                <td class="px-4 py-2 border">
+                    <ul class="space-y-2">
+                        ${order.items
+                    .map(
+                        item => `
+                            <li class="flex items-center space-x-4">
+                                <img src="${item.productId.images[0]}" alt="${item.productId.name}"
+                                    class="w-12 h-12 object-cover rounded-md border">
+                                <div>
+                                    <strong>${item.productId.name}</strong>
+                                    <p class="text-sm text-gray-500">Price: $${item.price}</p>
+                                    <p class="text-sm text-gray-500">Quantity: ${item.quantity}</p>
+                                </div>
+                            </li>`
+                    )
+                    .join("")}
+                    </ul>
+                </td>
+                <td class="px-4 py-2 border">$${order.totalAmount.toFixed(2)}</td>
+                <td class="px-4 py-2 border">
+                    <select class="w-full p-2 border border-gray-300 rounded-md status-select"
+                        onchange="updateStatus('${order._id}', this.value)">
+                        <option value="Pending" ${order.status === "Pending" ? "selected" : ""}>Pending</option>
+                        <option value="Processing" ${order.status === "Processing" ? "selected" : ""}>Processing</option>
+                        <option value="Shipped" ${order.status === "Shipped" ? "selected" : ""}>Shipped</option>
+                        <option value="Delivered" ${order.status === "Delivered" ? "selected" : ""}>Delivered</option>
+                    </select>
+                </td>
+                <td class="px-4 py-2 border">
+                    ${new Date(order.orderDate).toLocaleDateString("en-GB")}
+                </td>
+                <td class="px-4 py-2 text-center border">
+                    <a href="/orders/${order._id}" class="text-blue-600 hover:underline">View</a>
+                </td>
+            </tr>`;
+            tableBody.insertAdjacentHTML("beforeend", orderRow);
+        });
+    }
+
+    function updateURL(filters) {
+         // Create a new URL based on the current window location
+        const url = new URL(window.location.href);
+
+        url.searchParams.delete('page');
+
+        Object.keys(filters).forEach(key => url.searchParams.set(key, filters[key]));
+        window.history.pushState({}, '', url);
+    }
+
+</script>
 </div>
