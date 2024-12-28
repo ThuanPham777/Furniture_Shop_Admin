@@ -2,38 +2,24 @@ const userService = require('../../users/services/userService');
 const User = require('../../users/models/userModel');
 exports.getAllUsers = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1); // Đảm bảo page luôn >= 1
-    const limit = Math.max(1, parseInt(req.query.limit) || 10); // Đảm bảo limit luôn >= 1
-    const { sort, order, username, email } = req.query;
+    const filters = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
-    // Xây dựng query filter
-    const filter = {};
-    if (username) filter.username = { $regex: username, $options: 'i' }; // Tìm kiếm không phân biệt hoa thường
-    if (email) filter.email = { $regex: email, $options: 'i' };
-
-    // Xây dựng sorting
-    const sortOptions = {};
-    if (sort) {
-      sortOptions[sort] = order === 'asc' ? 1 : -1;
-    }
-
+    console.log('filter: ' + JSON.stringify(filters, null, 2));
     // Lấy danh sách users
-    const users = await userService.getAllUsers(
+    const { users, totalPages } = await userService.getAllUsers(
       page,
       limit,
-      filter,
-      sortOptions
+      filters
     );
-    const totalUsers = await userService.countUsers(filter);
-    const totalPages = Math.ceil(totalUsers / limit);
 
     // Trả về response
     return res.json({
       users,
       currentPage: page,
       totalPages,
-      filters: { username, email },
-      sorting: { sort, order },
+      filters,
     });
   } catch (error) {
     console.error(error);

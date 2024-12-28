@@ -2,14 +2,14 @@
 const userService = require('../services/userService');
 exports.renderAccountPage = async (req, res) => {
   try {
+    const filters = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const users = await userService.getAllUsers(page, limit);
-    const totalUsers = await userService.countUsers();
-    const totalPages = Math.ceil(totalUsers / limit);
+    const { users, totalPages } = await userService.getAllUsers(page, limit);
 
     // Render HTML for initial page load
     res.render('accounts/accounts', {
+      filters,
       users,
       currentPage: page,
       totalPages,
