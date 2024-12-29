@@ -1,17 +1,14 @@
 const reportService = require('../services/reportServices');
 
 exports.getRevenueReport = async (req, res) => {
-  const { timeRange, startDate, endDate } = req.query;
+  const { timeRange } = req.query;
 
   try {
-    const reportData = await reportService.generateRevenueReport(
-      timeRange,
-      startDate,
-      endDate
-    );
+    const reportData = await reportService.generateRevenueReport(timeRange);
 
-    //console.log('reportData', reportData);
-    res.status(200).json(reportData); // Trả về dữ liệu JSON đúng định dạng
+    //console.log('reportData', JSON.stringify(reportData, null, 2));
+
+    res.status(200).json(reportData);
   } catch (error) {
     console.error('Error generating revenue report:', error);
     res.status(500).json({ message: 'Internal Server Error' });
@@ -20,18 +17,20 @@ exports.getRevenueReport = async (req, res) => {
 
 exports.getTopRevenueProducts = async (req, res) => {
   try {
-    const { timeRange, startDate, endDate, limit } = req.query;
+    const { timeRange } = req.query;
 
     const revenueReport = await reportService.fetchTopRevenueProducts(
-      timeRange,
-      startDate,
-      endDate,
-      limit
+      timeRange
     );
 
-    console.log('revenueReport: ' + JSON.stringify(revenueReport, null, 2));
+    //console.log('revenueReport', JSON.stringify(revenueReport, null, 2));
 
-    res.status(200).json(revenueReport);
+    const chartData = revenueReport.map((item) => ({
+      name: item.name,
+      totalRevenue: item.totalRevenue,
+    }));
+
+    res.status(200).json({ revenueReport, chartData });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }

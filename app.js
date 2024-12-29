@@ -37,23 +37,6 @@ app.get('/', function (req, res) {
   res.render('dashboard/dashboard');
 });
 
-app.get('/reportsRevenue', async (req, res) => {
-  try {
-    res.render('reportsRevenue/reportsRevenue', { data: [] });
-  } catch (error) {
-    console.error('Error fetching report data:', error);
-    res.render('reportsRevenue/reportsRevenue', { data: [] });
-  }
-});
-app.get('/reportsProduct', async (req, res) => {
-  try {
-    res.render('reportsProduct/reportsProduct', { data: [] });
-  } catch (error) {
-    console.error('Error fetching report data:', error);
-    res.render('reportsProduct/reportsProduct', { data: [] });
-  }
-});
-
 app.use('/orders', orderRoutes);
 app.use('/api/orders', apiOrderRoutes);
 app.use('/products', productRoutes);

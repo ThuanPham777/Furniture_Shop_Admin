@@ -1,141 +1,259 @@
-<!DOCTYPE html>
-<html lang="en">
+<div class="container mx-auto my-10 p-6 bg-white rounded-lg shadow-md space-y-8">
+  <!-- Title -->
+  <h1 class="text-3xl font-bold text-blue-600 mb-4">E-Commerce Dashboard</h1>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
-  <!-- TailwindCSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-
-<body class="bg-gray-100 font-sans leading-normal tracking-normal">
-  <div class="container mx-auto my-10 p-6 bg-white rounded-lg shadow-md">
+  <!-- Revenue Report -->
+  <div class="containter max-w-7xl mx-auto px-6 py-6 bg-white rounded-lg shadow-lg">
     <!-- Title -->
-    <h1 class="text-3xl font-bold text-blue-600 mb-4">E-Commerce Dashboard</h1>
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-extrabold text-blue-600">Revenue Report</h1>
+      <p class="text-gray-600 mt-2">Visualize your revenue performance</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex justify-between items-center mb-8">
+      <div class="w-full lg:w-2/5 space-y-4">
+        <label for="timeRange" class="block text-sm font-medium text-gray-700">Select Time Range:</label>
+        <select id="timeRange" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"
+          onchange="fetchReport()">
+          <option value="day">Day</option>
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+          <option value="quarter">Quarter</option>
+          <option value="year">Year</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Chart Section -->
+      <div>
+        <canvas id="revenueChart" class="w-full h-96"></canvas>
+      </div>
+
+      <!-- Table Section -->
+      <div class="overflow-x-auto">
+        <div class="border rounded-lg shadow-md">
+          <div class="grid grid-cols-3 bg-purple-100 font-bold text-blue-600 py-3 px-4">
+            <div>Date</div>
+            <div>Orders</div>
+            <div>Total Revenue</div>
+          </div>
+          <div id="tableBodyRevenueReport" class="divide-y divide-gray-200">
+            <!-- Rows will be dynamically inserted here -->
+          </div>
+          <div class="grid grid-cols-3 bg-purple-50 font-bold py-3 px-4">
+            <div class="col-span-2 text-right">Total Revenue:</div>
+            <div id="totalRevenue" class="text-blue-600">$0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Top Products -->
+  <div class="container-top-products max-w-7xl mx-auto px-8 py-8 bg-white rounded-lg shadow-lg">
+    <!-- Title -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-extrabold text-blue-600">Product Report</h1>
+      <p class="text-gray-600 mt-2">An overview of product performance</p>
+    </div>
 
     <!-- Filters -->
     <div class="flex justify-between items-center mb-6">
-      <div>
-        <label for="timeRange" class="block text-sm font-medium text-gray-700">Select Time Range:</label>
-        <select id="timeRange" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+      <div class="w-full lg:w-2/5 space-y-4">
+        <label for="timeRange" class="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
+        <select id="timeRangeTopProducts"
+          class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          onchange="fetchProductReport()">
           <option value="day">Day</option>
           <option value="week">Week</option>
           <option value="month">Month</option>
         </select>
       </div>
-      <button class="bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-purple-700"
-        onclick="updateReports()">
-        Apply Filters
-      </button>
     </div>
 
-    <!-- Revenue Report -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">Revenue Report</h2>
-      <canvas id="revenueChart" class="w-full"></canvas>
+    <div class="space-y-8">
+      <!-- Chart -->
+      <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Top Revenue by Product</h2>
+        <canvas id="topProductsChart" class="w-full"></canvas>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <div class="border rounded-lg shadow-md">
+          <div class="grid grid-cols-7 bg-blue-100 font-semibold text-blue-700 py-3 px-4 rounded-t-lg">
+            <div>Image</div>
+            <div>Product Name</div>
+            <div>Price</div>
+            <div>Category</div>
+            <div>Manufacturer</div>
+            <div>Total Revenue</div>
+            <div>Total Quantity Sold</div>
+          </div>
+          <div id="tableBodyTopProducts" class="divide-y divide-gray-200">
+            <!-- Rows will be dynamically inserted here -->
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Top Products -->
-    <div class="bg-white p-6 rounded-lg shadow-md">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">Top Revenue by Product</h2>
-      <canvas id="topProductsChart" class="w-full"></canvas>
-    </div>
   </div>
+</div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <!-- Include Chart.js -->
   <script>
-    // Dummy data (replace with server-side data)
-    const revenueData = {
-      day: { labels: ['Morning', 'Afternoon', 'Evening'], data: [300, 500, 200] },
-      week: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], data: [1000, 1500, 1200, 1400, 1700, 900, 800] },
-      month: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], data: [4000, 4500, 3800, 5000] }
-    };
+    // Fetch report and populate chart + table
+    function fetchReport() {
+      const timeRange = document.getElementById("timeRange").value || 'day';
 
-    const topProductsData = {
-      day: { labels: ['Product A', 'Product B', 'Product C'], data: [200, 150, 100] },
-      week: { labels: ['Product A', 'Product B', 'Product C', 'Product D'], data: [500, 400, 300, 200] },
-      month: { labels: ['Product A', 'Product B', 'Product C', 'Product D', 'Product E', 'Product F', 'Product G', 'Product H', 'Product I', 'Product J'], data: [1000, 800, 600, 500, 400,1000, 800, 600, 500, 400] }
-    };
-
-    // Default charts
-    let revenueChart, topProductsChart;
-
-    // Initialize Charts
-    function initCharts(timeRange = 'day') {
-      const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
-      const ctxTopProducts = document.getElementById('topProductsChart').getContext('2d');
-
-      // Revenue Chart
-      revenueChart = new Chart(ctxRevenue, {
-        type: 'line',
-        data: {
-          labels: revenueData[timeRange].labels,
-          datasets: [{
-            label: 'Revenue',
-            data: revenueData[timeRange].data,
-            borderColor: '#6b46c1',
-            backgroundColor: 'rgba(107, 70, 193, 0.2)',
-            borderWidth: 2,
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true }
-          },
-          scales: {
-            x: { title: { display: true, text: 'Time Range' } },
-            y: { title: { display: true, text: 'Revenue ($)' } }
-          }
-        }
-      });
-
-      // Top Products Chart
-      topProductsChart = new Chart(ctxTopProducts, {
-        type: 'bar',
-        data: {
-          labels: topProductsData[timeRange].labels,
-          datasets: [{
-            label: 'Revenue by Product',
-            data: topProductsData[timeRange].data,
-            backgroundColor: '#6b46c1',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true }
-          },
-          scales: {
-            x: { title: { display: true, text: 'Products' } },
-            y: { title: { display: true, text: 'Revenue ($)' } }
-          }
-        }
-      });
+      // Call API to fetch data
+      fetch(`/reports/getRevenueReport?timeRange=${timeRange}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          updateTable(data);
+          updateChart(data);
+        })
+        .catch(error => console.error("Error fetching report:", error));
     }
 
-    // Update Reports based on Time Range
-    function updateReports() {
-      const timeRange = document.getElementById('timeRange').value;
+    // Update the revenue table
+    function updateTable(data) {
+      const tableBody = document.getElementById("tableBodyRevenueReport");
+      const totalRevenueElem = document.getElementById("totalRevenue");
+      tableBody.innerHTML = "";
 
-      // Update Revenue Chart
-      revenueChart.data.labels = revenueData[timeRange].labels;
-      revenueChart.data.datasets[0].data = revenueData[timeRange].data;
-      revenueChart.update();
+      let totalRevenue = 0;
 
-      // Update Top Products Chart
-      topProductsChart.data.labels = topProductsData[timeRange].labels;
-      topProductsChart.data.datasets[0].data = topProductsData[timeRange].data;
-      topProductsChart.update();
+      data.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "grid grid-cols-3 py-3 px-4 bg-gray-50 border-b";
+        row.innerHTML = `
+          <div>${item.date}</div>
+          <div>${item.totalOrders}</div>
+          <div>$${item.revenue.toFixed(2)}</div>
+        `;
+        tableBody.appendChild(row);
+        totalRevenue += item.revenue;
+      });
+
+      totalRevenueElem.textContent = `$${totalRevenue.toFixed(2)}`;
     }
 
-    // Initialize charts on page load
-    window.onload = () => initCharts();
+    function updateChart(data) {
+      const ctx = document.getElementById("revenueChart").getContext("2d");
+
+      // Kiểm tra nếu data có giá trị hợp lệ
+      if (!data || data.length === 0) {
+        console.error('No data available for the chart');
+        return;
+      }
+
+      const chartData = {
+        labels: data.map(item => item.date),
+        datasets: [{
+          label: "Revenue",
+          data: data.map(item => item.revenue),
+          backgroundColor: "rgba(54, 162, 235, 0.6)",
+          borderColor: "rgba(54, 162, 235, 1)",
+          borderWidth: 1,
+        }],
+      };
+
+      // Kiểm tra nếu revenueChart đã tồn tại
+      if (window.revenueChart instanceof Chart) {
+        // Cập nhật dữ liệu biểu đồ
+        window.revenueChart.data = chartData;
+        window.revenueChart.update();
+      } else {
+        // Tạo mới biểu đồ nếu chưa có
+        window.revenueChart = new Chart(ctx, {
+          type: "line",
+          data: chartData,
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: true },
+            },
+          },
+        });
+      }
+    }
+
+    function fetchProductReport() {
+      const timeRange = document.getElementById("timeRangeTopProducts").value || 'day';
+
+      fetch(`/reports/getTopRevenueProducts?timeRange=${timeRange}`)
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("data: ", JSON.stringify(data, null, 2));
+          updateTableTopRevenueProducts(data.revenueReport);
+          updateChartTopRevenueProducts(data.chartData);
+        })
+        .catch((error) => {
+          console.error(error);
+          alert("Error fetching product report");
+        });
+    }
+
+    function updateTableTopRevenueProducts(data) {
+      const tableBody = document.getElementById("tableBodyTopProducts");
+      tableBody.innerHTML = data.length
+        ? data.map(item => `
+          <div class="grid grid-cols-7 py-4 px-4 hover:bg-gray-50">
+            <div><img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-md"></div>
+            <div>${item.name || "N/A"}</div>
+            <div>$${(item.price || 0).toFixed(2)}</div>
+            <div>${item.category || "N/A"}</div>
+            <div>${item.manufacturer || "N/A"}</div>
+            <div>$${(item.totalRevenue || 0).toFixed(2)}</div>
+            <div>${item.totalQuantity || 0}</div>
+          </div>
+        `).join("")
+        : `<div class="text-center py-6 text-gray-500">No data available</div>`;
+    }
+
+    let topRevenueChart; // Biến toàn cục để lưu biểu đồ
+
+      function updateChartTopRevenueProducts(data) {
+        const labels = data.map(item => item.name);
+        const revenues = data.map(item => item.totalRevenue);
+
+        const ctx = document.getElementById("topProductsChart").getContext("2d");
+
+        // Kiểm tra nếu biểu đồ đã tồn tại, thì hủy biểu đồ cũ
+        if (topRevenueChart) {
+          topRevenueChart.destroy();
+        }
+
+        // Tạo biểu đồ mới
+        topRevenueChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [{
+              label: "Total Revenue",
+              data: revenues,
+              backgroundColor: "rgba(54, 162, 235, 0.5)",
+              borderColor: "rgba(54, 162, 235, 1)",
+              borderWidth: 1,
+            }],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+            },
+          },
+        });
+      }
+    // Fetch initial report when page loads
+    document.addEventListener("DOMContentLoaded", fetchReport);
+    document.addEventListener("DOMContentLoaded", fetchProductReport);
+
   </script>
-</body>
-
-</html>

@@ -18,19 +18,11 @@ const getQuarter = (month) => {
   if (month >= 9 && month <= 11) return 'Q4';
 };
 
-exports.generateRevenueReport = async (timeRange, startDate, endDate) => {
+exports.generateRevenueReport = async (timeRange) => {
   try {
     const orders = await orderService.getAllOrders();
 
     let filteredOrders = [...orders];
-    if (startDate && endDate) {
-      filteredOrders = filteredOrders.filter((order) => {
-        const orderDate = new Date(order.orderDate);
-        return (
-          orderDate >= new Date(startDate) && orderDate <= new Date(endDate)
-        );
-      });
-    }
 
     let aggregatedData = [];
     if (timeRange === 'day') {
@@ -126,14 +118,10 @@ exports.generateRevenueReport = async (timeRange, startDate, endDate) => {
   }
 };
 
-exports.fetchTopRevenueProducts = async (
-  timeRange,
-  startDate,
-  endDate,
-  limit = 10
-) => {
+exports.fetchTopRevenueProducts = async (timeRange, limit = 10) => {
   try {
     const matchStage = {};
+    let startDate, endDate;
 
     // Xử lý timeRange
     if (timeRange) {
