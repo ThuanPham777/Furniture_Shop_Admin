@@ -305,3 +305,24 @@ exports.deleteProduct = async (productId) => {
     throw new Error(error.message || 'Error deleting product');
   }
 };
+
+exports.removeImageProduct = async (productId, imageUrl) => {
+  try {
+    // Tìm sản phẩm trong cơ sở dữ liệu
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    // Xóa ảnh khỏi mảng images trong sản phẩm
+    product.images = product.images.filter((image) => image !== imageUrl);
+
+    // Lưu lại sản phẩm sau khi cập nhật
+    await product.save();
+
+    console.log('Image removed from product successfully');
+  } catch (error) {
+    console.error('Error removing image from product:', error.message);
+    throw new Error(error.message || 'Error removing image from product');
+  }
+};

@@ -99,12 +99,20 @@
                 <div class="mt-4">
                     <p class="text-gray-700 font-medium">Current Images:</p>
                     <div class="flex gap-2 mt-2">
-                        <% product.images.forEach(image=> { %>
-                            <img src="<%= image %>" alt="Product Image"
-                                class="w-24 h-24 object-cover rounded-lg border">
+                        <% product.images.forEach((image, index)=> { %>
+                            <div class="relative w-24 h-24">
+                                <!-- Nút xóa -->
+                                <button type="button" onclick="removeImageProduct('<%= product._id %>', '<%= image %>')"
+                                    class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md hover:bg-red-600 focus:outline-none">
+                                    ×
+                                </button>
+                                <!-- Ảnh sản phẩm -->
+                                <img src="<%= image %>" alt="Product Image" class="w-full h-full object-cover rounded-lg border">
+                            </div>
                             <% }) %>
                     </div>
                 </div>
+
                 <% } %>
         </div>
 
@@ -151,4 +159,31 @@
                 });
         });
     });
+
+    const removeImageProduct = async (productId, imageUrl) => {
+            try {
+                const response = await fetch(`/api/products/remove-image/${productId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ imageUrl }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Image has been successfully removed!');
+                    // Tìm và xóa DOM của ảnh đã bị xóa
+                    const imageElement = document.querySelector(`img[src='${imageUrl}']`);
+                    if (imageElement) {
+                        imageElement.parentElement.remove(); // Xóa thẻ cha chứa ảnh và nút xóa
+                    }
+                } else {
+                    alert('Failed to remove the image.');
+                }
+            } catch (error) {
+                console.error('Error removing image:', error);
+                alert('An error occurred while removing the image.');
+            }
+        };
+
 </script>

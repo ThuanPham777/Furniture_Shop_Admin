@@ -62,3 +62,15 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ message: 'Error deleting product' });
   }
 };
+
+exports.removeImageProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { imageUrl } = req.body;
+    await productService.removeImageProduct(productId, imageUrl);
+    res.json({ success: true, message: 'Image removed successfully!' });
+  } catch (error) {
+    console.error('Error removing image:', error);
+    res.status(500).json({ message: 'Error removing image' });
+  }
+};

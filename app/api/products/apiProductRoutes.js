@@ -21,4 +21,9 @@ router.put(
 
 router.delete('/delete/:productId', apiProductControllers.deleteProduct);
 
+router.delete(
+  '/remove-image/:productId',
+  apiProductControllers.removeImageProduct
+);
+
 module.exports = router;
