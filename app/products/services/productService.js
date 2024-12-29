@@ -2,13 +2,17 @@ const Product = require('../models/productModel');
 const Category = require('../../category/model/categoryModel');
 const Manufacturer = require('../../manufacturer/model/manufacturerModel');
 const cloudinary = require('../../../config/cloudinary');
-
+const extractPublicId = (imageUrl) => {
+  const matches = imageUrl.match(/\/upload\/v\d+\/(.+)\.\w+$/); // Biểu thức chính quy để lấy public_id
+  if (!matches || !matches[1]) {
+    throw new Error('Invalid imageUrl format');
+  }
+  return matches[1]; // Trả về public_id
+};
 //--------
 exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
   try {
     const filterConditions = {};
-
-    // Kiểm tra giá trị filters và áp dụng điều kiện filter cho các trường hợp khác nhau
 
     // Price Filter (minPrice và maxPrice)
     if (filters.minPrice || filters.maxPrice) {
@@ -101,7 +105,7 @@ exports.createProduct = async (productData, files) => {
   try {
     if (files && files.length > 0) {
       const uploadedImages = [];
-      const folderName = `products/${productData.name}`;
+      const folderName = `products`;
 
       // Use Promise.all to wait for all uploads to complete
       const uploadPromises = files.map((file) => {
@@ -173,7 +177,7 @@ exports.updateProduct = async (productId, updateData, files) => {
     }
 
     const uploadedImages = [];
-    const folderName = `products/${updateData.name}`;
+    const folderName = `products`;
 
     if (files && files.length > 0) {
       // Use Promise.all to handle asynchronous uploads
@@ -275,22 +279,18 @@ exports.deleteProduct = async (productId) => {
       throw new Error('Product not found');
     }
 
-    // Xóa các tệp trong thư mục trên Cloudinary
-    const folderName = `products/${product.name}`;
-
-    try {
-      await cloudinary.api.delete_resources_by_prefix(folderName);
-      console.log('Resources deleted successfully');
-
-      // Xóa thư mục (nếu cần)
-      await cloudinary.api.delete_folder(folderName);
-      console.log('Folder deleted successfully');
-    } catch (cloudinaryError) {
-      console.error(
-        'Error deleting folder or resources on Cloudinary:',
-        cloudinaryError.message
-      );
-      throw new Error('Error deleting folder on Cloudinary');
+    // Xóa từng ảnh trong mảng images
+    for (const imageUrl of product.images) {
+      try {
+        const publicId = extractPublicId(imageUrl); // Trích xuất public_id
+        const result = await cloudinary.uploader.destroy(publicId); // Xóa ảnh trên Cloudinary
+        console.log(`Deleted image: ${publicId}`, result);
+      } catch (cloudinaryError) {
+        console.error(
+          `Error deleting image: ${imageUrl}`,
+          cloudinaryError.message
+        );
+      }
     }
 
     // Xóa sản phẩm khỏi cơ sở dữ liệu
@@ -314,11 +314,26 @@ exports.removeImageProduct = async (productId, imageUrl) => {
       throw new Error('Product not found');
     }
 
+    // Gọi hàm phụ để trích xuất public_id
+    const imagePublicId = extractPublicId(imageUrl);
+
     // Xóa ảnh khỏi mảng images trong sản phẩm
     product.images = product.images.filter((image) => image !== imageUrl);
 
     // Lưu lại sản phẩm sau khi cập nhật
     await product.save();
+
+    // Xóa ảnh từ Cloudinary sử dụng public_id
+    try {
+      const result = await cloudinary.uploader.destroy(imagePublicId);
+      console.log('Image deleted successfully from Cloudinary:', result);
+    } catch (cloudinaryError) {
+      console.error(
+        'Error deleting image from Cloudinary:',
+        cloudinaryError.message
+      );
+      throw new Error('Error deleting image from Cloudinary');
+    }
 
     console.log('Image removed from product successfully');
   } catch (error) {
