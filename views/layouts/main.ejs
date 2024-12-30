@@ -48,11 +48,38 @@
         <h1 class="text-2xl font-bold text-white">Furniture Shop Admin</h1>
       </div>
       <div>
-        <button
-          class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Đăng nhập
-        </button>
+        <% if (user) { %>
+          <div class="relative">
+            <!-- Avatar and Username with dropdown -->
+            <div class="flex items-center space-x-2 cursor-pointer" onclick="toggleDropdown()">
+              <!-- Check if avatarUrl exists, otherwise use default image -->
+              <img src="<%= user && user.avatarUrl ? user.avatarUrl : '/img/Users/default.jpg' %>" alt="User Avatar"
+                class="w-8 h-8 rounded-full">
+              <span class="text-white font-medium hidden md:block">
+                Hello, <%= user.username %>
+              </span>
+            </div>
+
+            <!-- Dropdown menu -->
+            <div id="userDropdown" class="absolute right-0 mt-2 w-52 bg-white shadow-lg rounded-md hidden z-50">
+              <a href="/profile" class="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center space-x-2">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+              </a>
+              <a href="/signup" class="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center space-x-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add admin account</span>
+              </a>
+              <a href="/list-admin" class="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center space-x-2">
+                <i class="fas fa-users"></i>
+                <span>List of admins</span>
+              <a href="/logout" class="block px-4 py-2 text-gray-800 hover:bg-gray-200 flex items-center space-x-2">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+          <% } %>
       </div>
     </header>
 
@@ -123,3 +150,12 @@
     </script>
   </body>
 </html>
+
+<script>
+
+    // Function to toggle the visibility of the dropdown menu
+    function toggleDropdown() {
+      var dropdown = document.getElementById('userDropdown');
+      dropdown.classList.toggle('hidden');
+    }
+</script>

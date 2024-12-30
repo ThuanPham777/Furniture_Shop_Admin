@@ -1,0 +1,253 @@
+<div class="container mx-auto my-10 p-10 bg-white rounded-xl shadow-xl border border-gray-200">
+    <!-- Search -->
+    <div class="flex justify-between mb-10 gap-4">
+        <!-- Search -->
+        <div class="flex-[3]">
+            <div class="relative">
+                <input type="text" id="search" placeholder="Search username or email"
+                    value="<%= filters?.search || '' %>"
+                    class="filter-input px-4 py-3 border rounded-lg w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    onchange="updateSearchFilter(this.value)">
+                <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    🔍
+                </span>
+            </div>
+        </div>
+
+        <!-- Sort -->
+        <div class="flex-[1]">
+            <select id="sort" name="sort"
+                class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                onchange="updateSortFilter(this.value)">
+                <option value="" <%=!filters?.sort ? 'selected' : '' %>>Sort by</option>
+                <option value="username-asc" <%=filters?.sort==='username-asc' ? 'selected' : '' %>>Username: A to Z
+                </option>
+                <option value="username-desc" <%=filters?.sort==='username-desc' ? 'selected' : '' %>>Username: Z to A
+                </option>
+                <option value="email-asc" <%=filters?.sort==='email-asc' ? 'selected' : '' %>>Email: A to Z</option>
+                <option value="email-desc" <%=filters?.sort==='email-desc' ? 'selected' : '' %>>Email: Z to A</option>
+                <option value="createdAt-desc" <%=filters?.sort==='createdAt-desc' ? 'selected' : '' %>>Created At:
+                    Newest First</option>
+                <option value="createdAt-asc" <%=filters?.sort==='createdAt-asc' ? 'selected' : '' %>>Created At: Oldest
+                    First</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="overflow-x-auto rounded-lg shadow-md">
+        <table class="min-w-full bg-white divide-y divide-gray-300">
+            <!-- Table Header -->
+            <thead class="bg-blue-100">
+                <tr>
+                    <th scope="col" class="px-6 py-4 text-left text-sm font-semibold text-blue-700 tracking-wide ">
+                        Username
+                    </th>
+                    <th scope="col" class="px-6 py-4 text-left text-sm font-semibold text-blue-700 tracking-wide ">
+                        Email
+                    </th>
+                    <th scope="col" class="px-6 py-4 text-left text-sm font-semibold text-blue-700 tracking-wide ">
+                        Created At
+                    </th>
+                    <th scope="col" class="px-6 py-4 text-left text-sm font-semibold text-blue-700 tracking-wide">
+                        Action
+                    </th>
+                </tr>
+            </thead>
+            <!-- Table Body -->
+            <tbody id="userTableBody" class="divide-y divide-gray-200">
+                <% admins.forEach(admin=> { %>
+                    <tr class="hover:bg-blue-50">
+                        <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                            <%= admin.username %>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            <%= admin.email %>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            <%= new Date(admin.createdAt).toLocaleDateString('en-GB') %>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <a href="/admin/<%= admin._id %>" class="text-blue-600 hover:text-blue-800 font-semibold">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Section -->
+    <div id="pagination" class="pagination mt-8 flex justify-center items-center gap-2">
+        <!-- Previous Button -->
+        <a onclick="fetchAdmins()"
+            class="<%= currentPage === 1 ? 'px-4 py-2 text-gray-400 cursor-not-allowed' : 'px-4 py-2 border rounded hover:bg-blue-100' %>">
+            Previous
+        </a>
+
+        <!-- Page Numbers -->
+        <% for (let i=1; i <=totalPages; i++) { %>
+            <a onclick="fetchAdmins()"
+                class="<%= currentPage === i ? 'bg-blue-600 text-white px-4 py-2 rounded' : 'px-3 py-1 border rounded hover:bg-blue-100' %>">
+                <%= i %>
+            </a>
+            <% } %>
+
+                <!-- Next Button -->
+                <a onclick="fetchAdmins()"
+                    class="<%= currentPage === totalPages ? 'px-4 py-2 text-gray-400 cursor-not-allowed' : 'px-4 py-2 border rounded hover:bg-blue-100' %>">
+                    Next
+                </a>
+    </div>
+</div>
+
+<script>
+
+    const paginationContainer = document.getElementById('pagination');
+
+    function updateSearchFilter(searchValue) {
+        const filters = {}
+        if (searchValue) filters.search = searchValue;
+
+        updateURL(filters);
+        fetchAdmins(filters);
+    }
+
+    function updateSortFilter(sortValue) {
+        const filters = {}
+        if (sortValue) filters.sort = sortValue;
+        updateURL(filters);
+        fetchAdmins(filters);
+    }
+
+    function hasFilters(filters) {
+        return Object.values(filters).some(value => {
+            if (Array.isArray(value)) {
+                return value.length > 0;
+            }
+            return value !== undefined && value !== '';
+        });
+    }
+
+    // Hàm fetchAdmins đã sửa để cập nhật URL:
+    async function fetchAdmins(filters = {}) {
+
+        if (!hasFilters(filters)) {
+            filters = {};  // Không có bộ lọc, sẽ sử dụng mặc định
+        }
+        const url = new URL('/api/admins', window.location.origin);
+        Object.keys(filters).forEach(key => url.searchParams.append(key, filters[key]));
+
+        const response = await fetch(url);
+        const data = await response.json();
+        updateTable(data.admins);
+        renderPagination(data.currentPage, data.totalPages, filters);
+    }
+
+    // Cập nhật bảng với dữ liệu mới
+    function updateTable(admins) {
+        const tbody = document.getElementById("userTableBody");
+        tbody.innerHTML = ""; // Xóa dữ liệu cũ
+
+        admins.forEach(admin => {
+            const row = `
+        <tr class="hover:bg-blue-50">
+            <td class="px-6 py-4 text-sm text-gray-800 font-medium">
+                ${admin.username}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-600">
+                ${admin.email}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+                ${new Date(admin.createdAt).toLocaleDateString('en-GB')}
+            </td>
+            <td class="px-6 py-4 text-sm">
+                <a href="/admin/${admin._id}" class="text-blue-600 hover:text-blue-800 font-semibold">
+                    View
+                </a>
+            </td>
+        </tr>`;
+
+            // Chèn hàng mới vào bảng
+            tbody.insertAdjacentHTML("beforeend", row);
+        });
+    }
+
+
+    // Cập nhật phân trang
+    // Render pagination
+    function renderPagination(currentPage, totalPages, filters) {
+        paginationContainer.innerHTML = '';
+
+        // Add Previous Button
+        const prevButton = document.createElement('a');
+        prevButton.href = '#';
+        prevButton.textContent = 'Previous';
+        prevButton.className = currentPage === 1
+            ? 'px-4 py-2 text-gray-400 cursor-not-allowed'
+            : 'px-4 py-2 border rounded hover:bg-blue-100';
+
+        prevButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage > 1) {
+                const newFilters = { ...filters, page: currentPage - 1 };
+                updateURL(newFilters);
+                fetchAdmins(newFilters);
+            }
+        });
+
+        paginationContainer.appendChild(prevButton);
+
+        // Add page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const pageLink = document.createElement('a');
+            pageLink.href = '#';
+            pageLink.textContent = i;
+            pageLink.className = currentPage === i
+                ? 'bg-blue-600 text-white px-4 py-2 rounded'
+                : 'px-3 py-1 border rounded hover:bg-blue-100';
+
+            pageLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const newFilters = { ...filters, page: i };
+                updateURL(newFilters);
+                fetchAdmins(newFilters);
+            });
+
+            paginationContainer.appendChild(pageLink);
+        }
+
+        // Add Next Button
+        const nextButton = document.createElement('a');
+        nextButton.href = '#';
+        nextButton.textContent = 'Next';
+        nextButton.className = currentPage === totalPages
+            ? 'px-4 py-2 text-gray-400 cursor-not-allowed'
+            : 'px-4 py-2 border rounded hover:bg-blue-100';
+
+        nextButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                const newFilters = { ...filters, page: currentPage + 1 };
+                updateURL(newFilters);
+                fetchAdmins(newFilters);
+            }
+        });
+
+        paginationContainer.appendChild(nextButton);
+    }
+
+    // Hàm update URL
+    function updateURL(filters) {
+        const url = new URL(window.location.href);
+
+        url.searchParams.delete('page');
+        url.searchParams.delete('search');
+        url.searchParams.delete('sort');
+
+        Object.keys(filters).forEach(key => url.searchParams.set(key, filters[key]));
+        window.history.pushState({}, '', url);
+    }
+
+</script>
