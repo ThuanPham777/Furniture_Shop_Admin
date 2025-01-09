@@ -1,5 +1,6 @@
 // services/orderService.js
 const Order = require('../models/orderModel');
+const productService = require('../../products/services/productService');
 const User = require('../../users/models/userModel');
 
 exports.getOrderById = async (orderId) => {
@@ -82,7 +83,31 @@ exports.updateOrderStatus = async (orderId, status) => {
     throw new Error('Order not found');
   }
 
+  // Cập nhật trạng thái đơn hàng
   order.status = status;
+
+  if (status === 'Delivered') {
+    for (const item of order.items) {
+      const product = await productService.getProductById(item.productId);
+
+      if (!product) {
+        console.warn(`Product with ID ${item.productId} not found`);
+        continue;
+      }
+
+      // Kiểm tra số lượng tồn kho
+      if (product.totalStock < item.quantity) {
+        throw new Error(`Not enough stock for product ${product.name}`);
+      }
+
+      // Trừ số lượng tồn kho
+      product.totalStock -= item.quantity;
+
+      await product.save();
+    }
+  }
+
+  // Lưu cập nhật trạng thái
   await order.save();
   return order;
 };
