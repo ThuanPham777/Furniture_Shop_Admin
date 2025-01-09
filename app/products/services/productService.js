@@ -1,6 +1,7 @@
 const Product = require('../models/productModel');
 const Category = require('../../category/model/categoryModel');
 const Manufacturer = require('../../manufacturer/model/manufacturerModel');
+const Order = require('../../order/models/orderModel');
 const cloudinary = require('../../../config/cloudinary');
 const extractPublicId = (imageUrl) => {
   const matches = imageUrl.match(/\/upload\/v\d+\/(.+)\.\w+$/); // Biểu thức chính quy để lấy public_id
@@ -9,20 +10,32 @@ const extractPublicId = (imageUrl) => {
   }
   return matches[1]; // Trả về public_id
 };
+const calculateQuantitySold = async () => {
+  const orders = await Order.find({ status: 'Delivered' }).select('items');
+  const quantitySold = {};
+
+  for (const order of orders) {
+    for (const item of order.items) {
+      const productId = item.productId.toString();
+      if (!quantitySold[productId]) {
+        quantitySold[productId] = 0;
+      }
+      quantitySold[productId] += item.quantity;
+    }
+  }
+
+  return quantitySold;
+};
 //--------
 exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
   try {
     const filterConditions = {};
 
-    // Price Filter (minPrice và maxPrice)
+    // Price Filter
     if (filters.minPrice || filters.maxPrice) {
       const priceConditions = {};
-      if (filters.minPrice) {
-        priceConditions.$gte = Number(filters.minPrice);
-      }
-      if (filters.maxPrice) {
-        priceConditions.$lte = Number(filters.maxPrice);
-      }
+      if (filters.minPrice) priceConditions.$gte = Number(filters.minPrice);
+      if (filters.maxPrice) priceConditions.$lte = Number(filters.maxPrice);
       if (Object.keys(priceConditions).length > 0) {
         filterConditions.price = priceConditions;
       }
@@ -33,7 +46,7 @@ exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
       filterConditions.category = {
         $in: Array.isArray(filters.category)
           ? filters.category
-          : [filters.category], // Chắc chắn rằng category là một mảng
+          : [filters.category],
       };
     }
 
@@ -55,7 +68,7 @@ exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
       };
     }
 
-    // Search Keyword (nếu có)
+    // Search Keyword
     if (filters.search) {
       filterConditions.$or = [
         { name: { $regex: filters.search, $options: 'i' } },
@@ -63,33 +76,55 @@ exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
       ];
     }
 
-    // Sorting (tùy theo filter)
-    let sortQuery = {};
-    if (filters.sort === 'price-asc') {
-      sortQuery = { price: 1 };
-    } else if (filters.sort === 'price-desc') {
-      sortQuery = { price: -1 };
-    } else if (filters.sort === 'name-asc') {
-      sortQuery = { name: 1 };
-    } else if (filters.sort === 'name-desc') {
-      sortQuery = { name: -1 };
-    } else if (filters.sort === 'createdAt-asc') {
-      sortQuery = { createdAt: 1 }; // Old to new
-    } else if (filters.sort === 'createdAt-desc') {
-      sortQuery = { createdAt: -1 }; // New to old
-    }
-
     // Pagination
     const skip = (page - 1) * limit;
+
+    // Fetch Products
     const products = await Product.find(filterConditions)
       .skip(skip)
-      .limit(limit)
-      .sort(sortQuery);
+      .limit(limit);
 
+    // Fetch Quantity Sold for Sorting
+    const quantitySold = await calculateQuantitySold();
+
+    // Add totalPurchase to Products
+    const productsWithTotalPurchase = products.map((product) => {
+      const totalPurchase = quantitySold[product._id.toString()] || 0;
+      return { ...product.toObject(), totalPurchase };
+    });
+
+    // Sorting
+    if (filters.sort === 'price-asc') {
+      productsWithTotalPurchase.sort((a, b) => a.price - b.price);
+    } else if (filters.sort === 'price-desc') {
+      productsWithTotalPurchase.sort((a, b) => b.price - a.price);
+    } else if (filters.sort === 'name-asc') {
+      productsWithTotalPurchase.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (filters.sort === 'name-desc') {
+      productsWithTotalPurchase.sort((a, b) => b.name.localeCompare(a.name));
+    } else if (filters.sort === 'createdAt-asc') {
+      productsWithTotalPurchase.sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+    } else if (filters.sort === 'createdAt-desc') {
+      productsWithTotalPurchase.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+    } else if (filters.sort === 'totalPurchase-asc') {
+      productsWithTotalPurchase.sort(
+        (a, b) => a.totalPurchase - b.totalPurchase
+      );
+    } else if (filters.sort === 'totalPurchase-desc') {
+      productsWithTotalPurchase.sort(
+        (a, b) => b.totalPurchase - a.totalPurchase
+      );
+    }
+
+    // Total Products and Pages
     const totalProducts = await Product.countDocuments(filterConditions);
     const totalPages = Math.ceil(totalProducts / limit);
 
-    return { products, totalPages };
+    return { products: productsWithTotalPurchase, totalPages };
   } catch (error) {
     console.error(error);
     throw new Error('Error retrieving products');
