@@ -118,7 +118,7 @@ exports.generateRevenueReport = async (timeRange) => {
   }
 };
 
-exports.fetchTopRevenueProducts = async (timeRange, limit = 10) => {
+exports.fetchTopRevenueProducts = async (timeRange, year, limit = 10) => {
   try {
     const matchStage = { status: 'Delivered' };
     let startDate, endDate;
@@ -126,25 +126,55 @@ exports.fetchTopRevenueProducts = async (timeRange, limit = 10) => {
     // Xử lý timeRange
     if (timeRange) {
       const now = new Date();
+      const selectedYear = parseInt(year, 10) || now.getFullYear();
+
       if (timeRange === 'day') {
         // Xử lý ngày hiện tại
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0); // Bắt đầu ngày
-        endDate = new Date(now);
-        endDate.setHours(23, 59, 59, 999); // Kết thúc ngày
+        startDate = new Date(
+          selectedYear,
+          now.getMonth(),
+          now.getDate(),
+          0,
+          0,
+          0,
+          0
+        );
+        endDate = new Date(
+          selectedYear,
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          59,
+          999
+        );
       } else if (timeRange === 'week') {
         // Xử lý tuần hiện tại
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay()); // Bắt đầu tuần (Chủ nhật)
+        const startOfWeek = new Date(
+          selectedYear,
+          now.getMonth(),
+          now.getDate() - now.getDay()
+        );
         startDate = new Date(startOfWeek);
         startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(now);
+        endDate = new Date(selectedYear, now.getMonth(), now.getDate());
         endDate.setHours(23, 59, 59, 999);
       } else if (timeRange === 'month') {
         // Xử lý tháng hiện tại
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1); // Bắt đầu tháng
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Kết thúc tháng
-        endDate.setHours(23, 59, 59, 999);
+        startDate = new Date(selectedYear, now.getMonth(), 1, 0, 0, 0, 0);
+        endDate = new Date(
+          selectedYear,
+          now.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999
+        );
+      } else if (timeRange === 'year') {
+        // Xử lý năm cụ thể
+        startDate = new Date(selectedYear, 0, 1, 0, 0, 0, 0);
+        endDate = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
       }
     }
 

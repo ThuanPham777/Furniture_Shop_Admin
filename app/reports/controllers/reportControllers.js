@@ -17,10 +17,11 @@ exports.getRevenueReport = async (req, res) => {
 
 exports.getTopRevenueProducts = async (req, res) => {
   try {
-    const { timeRange } = req.query;
+    const { timeRange, year } = req.query;
 
     const revenueReport = await reportService.fetchTopRevenueProducts(
-      timeRange
+      timeRange,
+      year
     );
 
     //console.log('revenueReport', JSON.stringify(revenueReport, null, 2));

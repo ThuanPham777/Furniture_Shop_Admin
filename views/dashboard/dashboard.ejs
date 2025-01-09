@@ -71,6 +71,18 @@
           <option value="day">Day</option>
           <option value="week">Week</option>
           <option value="month">Month</option>
+          <option value="year">Year</option>
+        </select>
+      </div>
+
+      <div class="w-full lg:w-2/5 space-y-4">
+        <label for="yearSelect" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+        <select id="yearSelect"
+          class="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          onchange="fetchProductReport()">
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <!-- Thêm các năm khác nếu cần -->
         </select>
       </div>
     </div>
@@ -110,6 +122,7 @@
     // Fetch report and populate chart + table
     function fetchReport() {
       const timeRange = document.getElementById("timeRange").value || 'day';
+
 
       // Call API to fetch data
       fetch(`/reports/getRevenueReport?timeRange=${timeRange}`)
@@ -187,8 +200,9 @@
 
     function fetchProductReport() {
       const timeRange = document.getElementById("timeRangeTopProducts").value || 'day';
+      const selectedYear = document.getElementById("yearSelect").value || new Date().getFullYear();
 
-      fetch(`/reports/getTopRevenueProducts?timeRange=${timeRange}`)
+      fetch(`/reports/getTopRevenueProducts?timeRange=${timeRange}&year=${selectedYear}`)
         .then((response) => response.json())
         .then((data) => {
           console.log("data: ", JSON.stringify(data, null, 2));
