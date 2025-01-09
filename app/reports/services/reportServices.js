@@ -22,7 +22,7 @@ exports.generateRevenueReport = async (timeRange) => {
   try {
     const orders = await orderService.getAllOrders();
 
-    let filteredOrders = [...orders];
+    let filteredOrders = orders.filter((order) => order.status === 'Delivered');
 
     let aggregatedData = [];
     if (timeRange === 'day') {
@@ -120,7 +120,7 @@ exports.generateRevenueReport = async (timeRange) => {
 
 exports.fetchTopRevenueProducts = async (timeRange, limit = 10) => {
   try {
-    const matchStage = {};
+    const matchStage = { status: 'Delivered' };
     let startDate, endDate;
 
     // Xử lý timeRange
