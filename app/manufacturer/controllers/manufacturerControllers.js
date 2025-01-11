@@ -32,7 +32,7 @@ exports.renderAddManufacturer = async (req, res) => {
     const existingManufacturer = await manufacturerService.findManufacturerById(
       req.params.manufacturerId
     );
-    res.render('Manufacturer/add-Manufacturer', {
+    res.render('manufacturer/add-manufacturer', {
       manufacturer: existingManufacturer || null,
     });
   } catch (error) {
