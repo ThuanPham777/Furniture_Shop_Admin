@@ -36,9 +36,23 @@ exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
       const priceConditions = {};
       if (filters.minPrice) priceConditions.$gte = Number(filters.minPrice);
       if (filters.maxPrice) priceConditions.$lte = Number(filters.maxPrice);
-      if (Object.keys(priceConditions).length > 0) {
-        filterConditions.price = priceConditions;
-      }
+
+      filterConditions.$expr = {
+        $and: [
+          {
+            $gte: [
+              { $ifNull: ['$salePrice', '$price'] },
+              priceConditions.$gte || 0,
+            ],
+          },
+          {
+            $lte: [
+              { $ifNull: ['$salePrice', '$price'] },
+              priceConditions.$lte || Infinity,
+            ],
+          },
+        ],
+      };
     }
 
     // Category Filter
@@ -79,38 +93,68 @@ exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
     // Pagination
     const skip = (page - 1) * limit;
 
-    // Fetch Products
-    const products = await Product.find(filterConditions)
-      .skip(skip)
-      .limit(limit);
+    // Sort Options
+    const sortOptions = {};
+    if (filters.sort === 'price-asc') {
+      sortOptions.finalPrice = 1;
+    } else if (filters.sort === 'price-desc') {
+      sortOptions.finalPrice = -1;
+    } else if (filters.sort === 'name-asc') {
+      sortOptions.name = 1;
+    } else if (filters.sort === 'name-desc') {
+      sortOptions.name = -1;
+    } else if (filters.sort === 'createdAt-asc') {
+      sortOptions.createdAt = 1;
+    } else if (filters.sort === 'createdAt-desc') {
+      sortOptions.createdAt = -1;
+    }
 
-    // Fetch Quantity Sold for Sorting
+    // Combine salePrice and price into finalPrice and apply sorting
+    const aggregateQuery = [
+      {
+        $addFields: {
+          finalPrice: { $ifNull: ['$salePrice', '$price'] },
+        },
+      },
+      { $match: filterConditions },
+    ];
+
+    // Apply sorting if necessary
+    if (Object.keys(sortOptions).length > 0) {
+      aggregateQuery.push({ $sort: sortOptions });
+    }
+
+    // Total Products Query (for totalPages calculation)
+    const totalProductsQuery = Product.aggregate([
+      {
+        $addFields: {
+          finalPrice: { $ifNull: ['$salePrice', '$price'] },
+        },
+      },
+      { $match: filterConditions },
+    ]);
+    const totalProducts = await totalProductsQuery.exec();
+    const totalPages = Math.ceil(totalProducts.length / limit);
+
+    // Fetch paginated products
+    const productsQuery = [
+      ...aggregateQuery,
+      { $skip: skip },
+      { $limit: limit },
+    ];
+    const products = await Product.aggregate(productsQuery);
+
+    // Fetch Quantity Sold for totalPurchase
     const quantitySold = await calculateQuantitySold();
 
     // Add totalPurchase to Products
     const productsWithTotalPurchase = products.map((product) => {
       const totalPurchase = quantitySold[product._id.toString()] || 0;
-      return { ...product.toObject(), totalPurchase };
+      return { ...product, totalPurchase };
     });
 
-    // Sorting
-    if (filters.sort === 'price-asc') {
-      productsWithTotalPurchase.sort((a, b) => a.price - b.price);
-    } else if (filters.sort === 'price-desc') {
-      productsWithTotalPurchase.sort((a, b) => b.price - a.price);
-    } else if (filters.sort === 'name-asc') {
-      productsWithTotalPurchase.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (filters.sort === 'name-desc') {
-      productsWithTotalPurchase.sort((a, b) => b.name.localeCompare(a.name));
-    } else if (filters.sort === 'createdAt-asc') {
-      productsWithTotalPurchase.sort(
-        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      );
-    } else if (filters.sort === 'createdAt-desc') {
-      productsWithTotalPurchase.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-    } else if (filters.sort === 'totalPurchase-asc') {
+    // Sort by totalPurchase if needed
+    if (filters.sort === 'totalPurchase-asc') {
       productsWithTotalPurchase.sort(
         (a, b) => a.totalPurchase - b.totalPurchase
       );
@@ -119,10 +163,6 @@ exports.getProducts = async (filters = {}, page = 1, limit = 6) => {
         (a, b) => b.totalPurchase - a.totalPurchase
       );
     }
-
-    // Total Products and Pages
-    const totalProducts = await Product.countDocuments(filterConditions);
-    const totalPages = Math.ceil(totalProducts / limit);
 
     return { products: productsWithTotalPurchase, totalPages };
   } catch (error) {

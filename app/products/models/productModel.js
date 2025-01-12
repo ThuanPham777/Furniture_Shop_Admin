@@ -8,6 +8,11 @@ const productSchema = new mongoose.Schema(
     price: Number,
     salePrice: Number,
     totalStock: Number,
+    status: {
+      type: String,
+      enum: ['On stock', 'Out of stock', 'suspend'],
+      default: 'On stock',
+    },
     category: String,
     manufacturer: String,
     material: String,

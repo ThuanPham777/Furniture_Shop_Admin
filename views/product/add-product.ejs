@@ -54,6 +54,19 @@
                 required>
         </div>
 
+        <!-- Status -->
+        <div class="form-group">
+            <label for="status" class="block text-md font-medium text-gray-700">status</label>
+            <select id="status" name="status"
+                class="mt-2 block w-full rounded-lg border-gray-300 shadow-sm focus:border-lime-500 focus:ring-lime-500 p-2 text-md"
+                required>
+                <% ['On stock', 'Out of stock', 'suspend'].forEach(status=> { %>
+                    <option value="<%= status %>" <%=product && product.status===status ? 'selected' : '' %>>
+                        <%= status %>
+                    </option>
+                    <% }) %>
+            </select>
+        </div>
         <!-- Category -->
         <div class="form-group">
             <label for="category" class="block text-md font-medium text-gray-700">Category</label>
@@ -125,11 +138,37 @@
 </div>
 
 <script>
+    const priceInput = document.getElementById('price');
+    const salePriceInput = document.getElementById('salePrice');
+
     document.addEventListener("DOMContentLoaded", function () {
         const form = document.getElementById('product-form');
 
         form.addEventListener('submit', function (event) {
             event.preventDefault(); // Ngừng hành động gửi form mặc định
+
+             // Validate numeric fields
+            const priceValue = parseFloat(priceInput.value);
+            const salePriceValue = parseFloat(salePriceInput.value);
+            const totalStockValue = parseInt(document.getElementById('totalStock').value, 10);
+
+            if(priceValue <= salePriceValue){
+                alert('Sale price must be smaller than price.');
+                return; // Stop form submission
+            }
+            // Check if price, sale price, and total stock are valid numbers
+            if (isNaN(priceValue) || priceValue <= 0) {
+                alert('Please enter a valid price.');
+                return; // Stop form submission
+            }
+            if (salePriceValue && (isNaN(salePriceValue) || salePriceValue <= 0)) {
+                alert('Please enter a valid sale price.');
+                return; // Stop form submission
+            }
+            if (isNaN(totalStockValue) || totalStockValue <= 0) {
+                alert('Please enter a valid total stock.');
+                return; // Stop form submission
+            }
 
             // Lấy tất cả các giá trị từ form
             const formData = new FormData(form); // Sử dụng FormData để xử lý multipart form
